@@ -37,6 +37,11 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
+  useEffect(() => {
+    checkAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
