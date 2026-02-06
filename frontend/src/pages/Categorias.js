@@ -95,7 +95,7 @@ const Categorias = () => {
       setDialogOpen(false);
       loadCategories();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al guardar categoría');
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -106,7 +106,7 @@ const Categorias = () => {
       setDeleteDialogOpen(false);
       loadCategories();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Error al eliminar categoría');
+      toast.error(getErrorMessage(error));
     }
   };
 
