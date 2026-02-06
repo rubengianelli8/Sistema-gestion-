@@ -200,6 +200,7 @@ const Clientes = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>
+                  <TableHead>DNI</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Teléfono</TableHead>
                   <TableHead>Saldo</TableHead>
@@ -210,6 +211,7 @@ const Clientes = () => {
                 {filteredCustomers.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell className="font-medium">{customer.nombre}</TableCell>
+                    <TableCell>{customer.dni || '-'}</TableCell>
                     <TableCell>{customer.email || '-'}</TableCell>
                     <TableCell>{customer.telefono || '-'}</TableCell>
                     <TableCell>${customer.saldo_cuenta_corriente.toFixed(2)}</TableCell>
