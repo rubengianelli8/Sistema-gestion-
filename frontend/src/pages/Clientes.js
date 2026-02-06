@@ -49,6 +49,7 @@ const Clientes = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     nombre: '',
+    dni: '',
     email: '',
     telefono: '',
     direccion: '',
