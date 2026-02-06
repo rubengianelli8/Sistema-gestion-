@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import Categorias from './pages/Categorias';
 import Productos from './pages/Productos';
 import Clientes from './pages/Clientes';
+import Ventas from './pages/Ventas';
+import Presupuestos from './pages/Presupuestos';
 import '@/App.css';
 
 function App() {
