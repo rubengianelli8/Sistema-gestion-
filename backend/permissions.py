@@ -105,11 +105,18 @@ ROLE_PERMISSIONS: Dict[UserRole, Set[str]] = {
         Permission.PRESUPUESTOS_CONVERTIR,
     },
     UserRole.ALMACENERO: {
-        # Almacenero: productos e inventario completo
+        # Almacenero: productos e inventario completo + depósitos + compras
         Permission.PRODUCTOS_VER,
         Permission.PRODUCTOS_CREAR,
         Permission.PRODUCTOS_EDITAR,
         Permission.PRODUCTOS_ELIMINAR,
+        Permission.DEPOSITOS_VER,
+        Permission.DEPOSITOS_CREAR,
+        Permission.DEPOSITOS_EDITAR,
+        Permission.COMPRAS_VER,
+        Permission.COMPRAS_CREAR,
+        Permission.COMPRAS_RECIBIR,
+        Permission.PROVEEDORES_VER,
     },
     UserRole.CONTADOR: {
         # Contador: solo lectura de ventas y reportes
