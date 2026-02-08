@@ -256,8 +256,21 @@ const Ventas = () => {
             <div className="lg:col-span-2 space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Buscar Productos</CardTitle>
-                  <CardDescription>Escanea o busca productos para agregar al carrito</CardDescription>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>Buscar Productos</CardTitle>
+                      <CardDescription>Escanea o busca productos para agregar al carrito</CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setScannerOpen(true)}
+                      data-testid="open-scanner-button"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Escanear
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="relative">
