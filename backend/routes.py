@@ -846,3 +846,56 @@ async def export_products_excel(current_user: dict):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": "attachment; filename=productos.xlsx"}
     )
+
+# ===== BACKUP ROUTES =====
+
+async def create_full_backup(current_user: dict):
+    """Create full database backup"""
+    from permissions import Permission
+    from models import UserRole
+    
+    # Only admins can create backups
+    require_permission(UserRole(current_user["rol"]), Permission.USUARIOS_VER)
+    
+    from database import (
+        products_collection,
+        categories_collection,
+        customers_collection,
+        sales_collection,
+        quotes_collection,
+        users_collection,
+    )
+    
+    # Get all collections data
+    backup_data = {
+        "backup_date": datetime.utcnow().isoformat(),
+        "backup_by": current_user["nombre"],
+        "version": "1.0.0",
+        "data": {
+            "products": await products_collection.find({}, {"_id": 0}).to_list(10000),
+            "categories": await categories_collection.find({}, {"_id": 0}).to_list(10000),
+            "customers": await customers_collection.find({}, {"_id": 0}).to_list(10000),
+            "sales": await sales_collection.find({}, {"_id": 0}).to_list(10000),
+            "quotes": await quotes_collection.find({}, {"_id": 0}).to_list(10000),
+            "users": await users_collection.find({}, {"_id": 0, "password_hash": 0}).to_list(10000),
+        }
+    }
+    
+    # Convert to JSON
+    import json
+    backup_json = json.dumps(backup_data, indent=2, ensure_ascii=False, default=str)
+    
+    await log_audit(
+        usuario_id=current_user["id"],
+        usuario_nombre=current_user["nombre"],
+        accion="backup",
+        modulo="sistema",
+        detalles="Backup completo de la base de datos"
+    )
+    
+    # Return as downloadable file
+    return StreamingResponse(
+        io.BytesIO(backup_json.encode('utf-8')),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=backup_ferreteria_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"}
+    )
