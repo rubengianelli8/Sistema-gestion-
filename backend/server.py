@@ -27,6 +27,7 @@ from database import (
 )
 import routes
 import stats
+import routes_warehouse
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
