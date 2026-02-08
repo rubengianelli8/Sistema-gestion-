@@ -77,6 +77,27 @@ async def create_indexes():
     # Audit logs indexes
     await audit_logs_collection.create_index("timestamp")
     await audit_logs_collection.create_index("usuario_id")
+    
+    # Warehouses indexes
+    await warehouses_collection.create_index("id", unique=True)
+    await warehouses_collection.create_index("nombre")
+    
+    # Suppliers indexes
+    await suppliers_collection.create_index("id", unique=True)
+    await suppliers_collection.create_index("nombre")
+    
+    # Supplier prices indexes
+    await supplier_prices_collection.create_index("producto_id")
+    await supplier_prices_collection.create_index("proveedor_id")
+    await supplier_prices_collection.create_index([("producto_id", 1), ("proveedor_id", 1)])
+    
+    # Purchases indexes
+    await purchases_collection.create_index("id", unique=True)
+    await purchases_collection.create_index("proveedor_id")
+    await purchases_collection.create_index("fecha")
+    
+    # Product stock indexes
+    await product_stock_collection.create_index([("producto_id", 1), ("deposito_id", 1)], unique=True)
 
 async def log_audit(usuario_id: str, usuario_nombre: str, accion: str, modulo: str, detalles: Optional[str] = None):
     """Log an audit entry"""
