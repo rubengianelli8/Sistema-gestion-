@@ -65,6 +65,7 @@ const Presupuestos = () => {
     } else {
       setSearchResults([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const loadData = async () => {
