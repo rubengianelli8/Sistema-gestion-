@@ -199,6 +199,18 @@ const Ventas = () => {
     setDetailsDialogOpen(true);
   };
 
+  const handlePrintTicket = (sale) => {
+    const customer = customers.find(c => c.id === sale.cliente_id);
+    const doc = generateSaleTicket(sale, customer);
+    printPDF(doc);
+  };
+
+  const handleDownloadInvoice = (sale) => {
+    const customer = customers.find(c => c.id === sale.cliente_id);
+    const doc = generateSaleInvoice(sale, customer);
+    downloadPDF(doc, `factura_${sale.id.substring(0, 8)}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
       <div>
