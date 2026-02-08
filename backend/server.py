@@ -499,6 +499,136 @@ async def get_dashboard_statistics(current_user: dict = Depends(get_current_user
     """Get comprehensive dashboard statistics"""
     return await stats.get_dashboard_stats(current_user)
 
+# ===== WAREHOUSES ROUTES =====
+
+@api_router.get("/warehouses", response_model=List[Warehouse])
+async def list_warehouses(current_user: dict = Depends(get_current_user)):
+    """List all warehouses"""
+    return await routes_warehouse.get_warehouses_list(current_user)
+
+@api_router.post("/warehouses", response_model=Warehouse, status_code=status.HTTP_201_CREATED)
+async def create_warehouse_route(
+    warehouse_data: WarehouseCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create new warehouse"""
+    return await routes_warehouse.create_warehouse(warehouse_data, current_user)
+
+@api_router.put("/warehouses/{warehouse_id}", response_model=Warehouse)
+async def update_warehouse_route(
+    warehouse_id: str,
+    warehouse_data: WarehouseUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update warehouse"""
+    return await routes_warehouse.update_warehouse(warehouse_id, warehouse_data, current_user)
+
+@api_router.delete("/warehouses/{warehouse_id}")
+async def delete_warehouse_route(
+    warehouse_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete warehouse"""
+    return await routes_warehouse.delete_warehouse(warehouse_id, current_user)
+
+# ===== SUPPLIERS ROUTES =====
+
+@api_router.get("/suppliers", response_model=List[Supplier])
+async def list_suppliers(current_user: dict = Depends(get_current_user)):
+    """List all suppliers"""
+    return await routes_warehouse.get_suppliers_list(current_user)
+
+@api_router.post("/suppliers", response_model=Supplier, status_code=status.HTTP_201_CREATED)
+async def create_supplier_route(
+    supplier_data: SupplierCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create new supplier"""
+    return await routes_warehouse.create_supplier(supplier_data, current_user)
+
+@api_router.put("/suppliers/{supplier_id}", response_model=Supplier)
+async def update_supplier_route(
+    supplier_id: str,
+    supplier_data: SupplierUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update supplier"""
+    return await routes_warehouse.update_supplier(supplier_id, supplier_data, current_user)
+
+@api_router.delete("/suppliers/{supplier_id}")
+async def delete_supplier_route(
+    supplier_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete supplier"""
+    return await routes_warehouse.delete_supplier(supplier_id, current_user)
+
+# ===== SUPPLIER PRICES ROUTES =====
+
+@api_router.get("/products/{producto_id}/prices")
+async def get_product_prices_route(
+    producto_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get supplier prices for a product"""
+    return await routes_warehouse.get_product_prices(producto_id, current_user)
+
+@api_router.post("/supplier-prices")
+async def add_supplier_price_route(
+    price_data: SupplierPriceCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Add or update supplier price"""
+    return await routes_warehouse.add_supplier_price(price_data, current_user)
+
+@api_router.get("/products/{producto_id}/compare-prices")
+async def compare_prices_route(
+    producto_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Compare prices from all suppliers"""
+    return await routes_warehouse.compare_prices(producto_id, current_user)
+
+@api_router.post("/suppliers/{supplier_id}/import-prices")
+async def import_supplier_prices_route(
+    supplier_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Import supplier price list from Excel"""
+    return await routes_warehouse.import_supplier_prices(file, supplier_id, current_user)
+
+# ===== PURCHASES ROUTES =====
+
+@api_router.get("/purchases", response_model=List[Purchase])
+async def list_purchases(current_user: dict = Depends(get_current_user)):
+    """List all purchases"""
+    return await routes_warehouse.get_purchases_list(current_user)
+
+@api_router.post("/purchases", response_model=Purchase, status_code=status.HTTP_201_CREATED)
+async def create_purchase_route(
+    purchase_data: PurchaseCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create new purchase"""
+    return await routes_warehouse.create_purchase(purchase_data, current_user)
+
+@api_router.post("/purchases/{purchase_id}/receive")
+async def receive_purchase_route(
+    purchase_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Receive purchase and update stock"""
+    return await routes_warehouse.receive_purchase(purchase_id, current_user)
+
+@api_router.get("/products/{producto_id}/stock-by-warehouse")
+async def get_product_stock_by_warehouse_route(
+    producto_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get product stock by warehouse"""
+    return await routes_warehouse.get_product_stock_by_warehouse(producto_id, current_user)
+
 # ===== HEALTH CHECK =====
 
 @api_router.get("/")
