@@ -1,0 +1,284 @@
+{
+  "timestamp": "2026-02-08T02:45:57.136605",
+  "total_tests": 46,
+  "passed_tests": 41,
+  "success_rate": 89.13043478260869,
+  "detailed_results": [
+    {
+      "test_name": "Health Check",
+      "success": true,
+      "details": "Status: 200",
+      "user": null
+    },
+    {
+      "test_name": "Login admin",
+      "success": true,
+      "details": "Token received",
+      "user": null
+    },
+    {
+      "test_name": "Login vendedor",
+      "success": true,
+      "details": "Token received",
+      "user": null
+    },
+    {
+      "test_name": "Login almacenero",
+      "success": true,
+      "details": "Token received",
+      "user": null
+    },
+    {
+      "test_name": "Login contador",
+      "success": false,
+      "details": "Status: 401, Data: {'detail': 'Email o contrase\u00f1a incorrectos'}",
+      "user": null
+    },
+    {
+      "test_name": "Get Permissions admin",
+      "success": true,
+      "details": "21 permissions",
+      "user": null
+    },
+    {
+      "test_name": "Get Permissions vendedor",
+      "success": true,
+      "details": "10 permissions",
+      "user": null
+    },
+    {
+      "test_name": "Get Permissions almacenero",
+      "success": true,
+      "details": "4 permissions",
+      "user": null
+    },
+    {
+      "test_name": "GET Categories (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "CREATE Category (admin)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "admin"
+    },
+    {
+      "test_name": "UPDATE Category (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "DELETE Category (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "GET Products (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "SEARCH Products (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "CREATE Product (admin)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "admin"
+    },
+    {
+      "test_name": "GET Customers (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "CREATE Customer (admin)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "admin"
+    },
+    {
+      "test_name": "GET Sales (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "CREATE Sale (admin)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "admin"
+    },
+    {
+      "test_name": "ANULAR Sale (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "GET Quotes (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "CREATE Quote (admin)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "admin"
+    },
+    {
+      "test_name": "CONVERT Quote (admin)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "admin"
+    },
+    {
+      "test_name": "GET Categories (vendedor)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "GET Products (vendedor)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "SEARCH Products (vendedor)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "GET Customers (vendedor)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "CREATE Customer (vendedor)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "GET Sales (vendedor)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "CREATE Sale (vendedor)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "ANULAR Sale (vendedor)",
+      "success": false,
+      "details": "Status: 403",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "GET Quotes (vendedor)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "CREATE Quote (vendedor)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "CONVERT Quote (vendedor)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "vendedor"
+    },
+    {
+      "test_name": "GET Categories (almacenero)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "CREATE Category (almacenero)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "UPDATE Category (almacenero)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "DELETE Category (almacenero)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "GET Products (almacenero)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "SEARCH Products (almacenero)",
+      "success": true,
+      "details": "Status: 200",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "CREATE Product (almacenero)",
+      "success": true,
+      "details": "Status: 201",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "GET Customers (almacenero)",
+      "success": false,
+      "details": "Status: 403",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "GET Sales (almacenero)",
+      "success": false,
+      "details": "Status: 403",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "GET Quotes (almacenero)",
+      "success": false,
+      "details": "Status: 403",
+      "user": "almacenero"
+    },
+    {
+      "test_name": "Vendedor Cannot Create Products",
+      "success": true,
+      "details": "Status: 403",
+      "user": "permission_test"
+    },
+    {
+      "test_name": "Almacenero Cannot View Sales",
+      "success": true,
+      "details": "Status: 403",
+      "user": "permission_test"
+    }
+  ]
+}
