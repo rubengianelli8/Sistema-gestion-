@@ -113,4 +113,46 @@ export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
 };
 
+// Warehouses API
+export const warehousesAPI = {
+  getAll: () => api.get('/warehouses'),
+  create: (data) => api.post('/warehouses', data),
+  update: (id, data) => api.put(`/warehouses/${id}`, data),
+  delete: (id) => api.delete(`/warehouses/${id}`),
+};
+
+// Suppliers API
+export const suppliersAPI = {
+  getAll: () => api.get('/suppliers'),
+  create: (data) => api.post('/suppliers', data),
+  update: (id, data) => api.put(`/suppliers/${id}`, data),
+  delete: (id) => api.delete(`/suppliers/${id}`),
+  importPrices: (id, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/suppliers/${id}/import-prices`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+};
+
+// Purchases API
+export const purchasesAPI = {
+  getAll: () => api.get('/purchases'),
+  create: (data) => api.post('/purchases', data),
+  receive: (id) => api.post(`/purchases/${id}/receive`),
+};
+
+// Supplier Prices API
+export const supplierPricesAPI = {
+  getProductPrices: (productId) => api.get(`/products/${productId}/prices`),
+  comparePrices: (productId) => api.get(`/products/${productId}/compare-prices`),
+  addPrice: (data) => api.post('/supplier-prices', data),
+};
+
+// Product Stock API
+export const productStockAPI = {
+  getByWarehouse: (productId) => api.get(`/products/${productId}/stock-by-warehouse`),
+};
+
 export default api;
