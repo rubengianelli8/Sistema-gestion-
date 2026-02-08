@@ -53,6 +53,9 @@ const Ventas = () => {
   // Sale Details Dialog
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
+  
+  // Barcode Scanner
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const canCreate = hasPermission('ventas:crear');
   const canAnular = hasPermission('ventas:anular');
