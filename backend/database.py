@@ -22,6 +22,11 @@ customers_collection = db.customers
 sales_collection = db.sales
 quotes_collection = db.quotes
 audit_logs_collection = db.audit_logs
+warehouses_collection = db.warehouses
+suppliers_collection = db.suppliers
+supplier_prices_collection = db.supplier_prices
+purchases_collection = db.purchases
+product_stock_collection = db.product_stock  # Stock por depósito
 
 # Helper functions
 def serialize_doc(doc: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
