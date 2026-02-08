@@ -552,6 +552,13 @@ const Ventas = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Barcode Scanner */}
+      <BarcodeScanner
+        isOpen={scannerOpen}
+        onScan={handleBarcodeScanned}
+        onClose={() => setScannerOpen(false)}
+      />
     </div>
   );
 };
