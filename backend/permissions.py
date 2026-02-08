@@ -36,6 +36,23 @@ class Permission:
     
     # Reportes
     REPORTES_VER = "reportes:ver"
+    
+    # Proveedores
+    PROVEEDORES_VER = "proveedores:ver"
+    PROVEEDORES_CREAR = "proveedores:crear"
+    PROVEEDORES_EDITAR = "proveedores:editar"
+    PROVEEDORES_ELIMINAR = "proveedores:eliminar"
+    
+    # Compras
+    COMPRAS_VER = "compras:ver"
+    COMPRAS_CREAR = "compras:crear"
+    COMPRAS_RECIBIR = "compras:recibir"
+    
+    # Depósitos
+    DEPOSITOS_VER = "depositos:ver"
+    DEPOSITOS_CREAR = "depositos:crear"
+    DEPOSITOS_EDITAR = "depositos:editar"
+    DEPOSITOS_ELIMINAR = "depositos:eliminar"
 
 # Role permissions mapping
 ROLE_PERMISSIONS: Dict[UserRole, Set[str]] = {
