@@ -484,6 +484,13 @@ async def export_products_route(current_user: dict = Depends(get_current_user)):
     """Export products to Excel"""
     return await routes.export_products_excel(current_user)
 
+# ===== BACKUP ROUTES =====
+
+@api_router.get("/system/backup")
+async def create_backup_route(current_user: dict = Depends(get_current_user)):
+    """Create full database backup (Admin only)"""
+    return await routes.create_full_backup(current_user)
+
 # ===== DASHBOARD STATS ROUTES =====
 
 @api_router.get("/dashboard/stats")
