@@ -79,6 +79,17 @@ ROLE_PERMISSIONS: Dict[UserRole, Set[str]] = {
         Permission.USUARIOS_EDITAR,
         Permission.USUARIOS_ELIMINAR,
         Permission.REPORTES_VER,
+        Permission.PROVEEDORES_VER,
+        Permission.PROVEEDORES_CREAR,
+        Permission.PROVEEDORES_EDITAR,
+        Permission.PROVEEDORES_ELIMINAR,
+        Permission.COMPRAS_VER,
+        Permission.COMPRAS_CREAR,
+        Permission.COMPRAS_RECIBIR,
+        Permission.DEPOSITOS_VER,
+        Permission.DEPOSITOS_CREAR,
+        Permission.DEPOSITOS_EDITAR,
+        Permission.DEPOSITOS_ELIMINAR,
     },
     UserRole.VENDEDOR: {
         # Vendedor: ventas, clientes, presupuestos completo, productos solo ver
