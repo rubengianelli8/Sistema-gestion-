@@ -219,3 +219,130 @@ class AuditLog(BaseModel):
     modulo: str
     detalles: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
+# Warehouse/Deposito Models
+class WarehouseBase(BaseModel):
+    nombre: str
+    direccion: Optional[str] = None
+    encargado: Optional[str] = None
+    telefono: Optional[str] = None
+
+class WarehouseCreate(WarehouseBase):
+    pass
+
+class WarehouseUpdate(BaseModel):
+    nombre: Optional[str] = None
+    direccion: Optional[str] = None
+    encargado: Optional[str] = None
+    telefono: Optional[str] = None
+    activo: Optional[bool] = None
+
+class Warehouse(WarehouseBase):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    activo: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Stock por Depósito
+class StockWarehouse(BaseModel):
+    deposito_id: str
+    deposito_nombre: str
+    cantidad: int
+    ubicacion_interna: Optional[str] = None  # Ej: "Pasillo A - Estante 3"
+
+# Supplier/Proveedor Models
+class SupplierBase(BaseModel):
+    nombre: str
+    contacto: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telefono: Optional[str] = None
+    direccion: Optional[str] = None
+    cuit: Optional[str] = None
+
+class SupplierCreate(SupplierBase):
+    pass
+
+class SupplierUpdate(BaseModel):
+    nombre: Optional[str] = None
+    contacto: Optional[str] = None
+    email: Optional[EmailStr] = None
+    telefono: Optional[str] = None
+    direccion: Optional[str] = None
+    cuit: Optional[str] = None
+    activo: Optional[bool] = None
+
+class Supplier(SupplierBase):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    activo: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+# Supplier Price Models
+class SupplierPriceBase(BaseModel):
+    producto_id: str
+    producto_nombre: str
+    proveedor_id: str
+    proveedor_nombre: str
+    precio: float
+    codigo_proveedor: Optional[str] = None  # Código del producto en el catálogo del proveedor
+
+class SupplierPriceCreate(SupplierPriceBase):
+    pass
+
+class SupplierPriceUpdate(BaseModel):
+    precio: Optional[float] = None
+    codigo_proveedor: Optional[str] = None
+
+class SupplierPrice(SupplierPriceBase):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    fecha_actualizacion: datetime = Field(default_factory=datetime.utcnow)
+
+# Purchase Status
+class PurchaseStatus(str, Enum):
+    PENDIENTE = "pendiente"
+    RECIBIDA = "recibida"
+    PARCIAL = "parcial"
+    CANCELADA = "cancelada"
+
+# Purchase Item
+class PurchaseItem(BaseModel):
+    producto_id: str
+    producto_nombre: str
+    cantidad: int
+    precio_unitario: float
+    subtotal: float
+
+# Purchase Models
+class PurchaseBase(BaseModel):
+    proveedor_id: str
+    deposito_id: str  # A qué depósito llega la mercadería
+    items: List[PurchaseItem]
+    numero_factura: Optional[str] = None
+    notas: Optional[str] = None
+
+class PurchaseCreate(PurchaseBase):
+    pass
+
+class Purchase(PurchaseBase):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    proveedor_nombre: str
+    deposito_nombre: str
+    total: float
+    estado: PurchaseStatus = PurchaseStatus.PENDIENTE
+    fecha: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    recibida_por: Optional[str] = None
+    fecha_recepcion: Optional[datetime] = None
+
+# Product with Multi-Warehouse Stock
+class ProductWithStock(Product):
+    stock_depositos: List[StockWarehouse] = []
+    stock_total: int = 0
