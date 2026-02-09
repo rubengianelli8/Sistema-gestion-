@@ -41,8 +41,9 @@ import {
 } from '../components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Search, Upload, Download, DollarSign, TrendingDown, Building2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Upload, Download, DollarSign, TrendingDown, Building2, QrCode, DownloadCloud } from 'lucide-react';
 import { toast } from 'sonner';
+import { QRCodeSVG } from 'qrcode.react';
 
 const Productos = () => {
   const { hasPermission } = useAuth();
@@ -57,6 +58,8 @@ const Productos = () => {
   const [priceCompareOpen, setPriceCompareOpen] = useState(false);
   const [priceCompareData, setPriceCompareData] = useState(null);
   const [priceCompareLoading, setPriceCompareLoading] = useState(false);
+  const [qrDialogOpen, setQrDialogOpen] = useState(false);
+  const [qrProduct, setQrProduct] = useState(null);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -224,6 +227,68 @@ const Productos = () => {
     if (!currentPrice || !bestPrice) return null;
     const savings = ((currentPrice - bestPrice) / currentPrice) * 100;
     return savings > 0 ? savings.toFixed(1) : null;
+  };
+
+  const handleOpenQrDialog = (product) => {
+    setQrProduct(product);
+    setQrDialogOpen(true);
+  };
+
+  const generateQrData = (product) => {
+    return JSON.stringify({
+      type: 'FERRETERIA_PRODUCT',
+      id: product.id,
+      nombre: product.nombre,
+      precio: product.precio_minorista,
+      codigo: product.codigo_barras || `QR-${product.id.slice(0, 8)}`
+    });
+  };
+
+  const handleDownloadQr = () => {
+    if (!qrProduct) return;
+    
+    const svg = document.getElementById('qr-code-svg');
+    if (!svg) return;
+
+    // Create canvas from SVG
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = 300;
+      canvas.height = 380;
+      
+      // White background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw QR code centered
+      ctx.drawImage(img, 50, 20, 200, 200);
+      
+      // Add product info text
+      ctx.fillStyle = 'black';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(qrProduct.nombre.slice(0, 30), 150, 250);
+      
+      ctx.font = '12px Arial';
+      ctx.fillText(`Código: ${qrProduct.codigo_barras || 'QR-' + qrProduct.id.slice(0, 8)}`, 150, 275);
+      
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText(`$${qrProduct.precio_minorista}`, 150, 300);
+      
+      // Download
+      const link = document.createElement('a');
+      link.download = `QR_${qrProduct.nombre.replace(/\s+/g, '_')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+      toast.success('Código QR descargado');
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
   };
 
   return (
