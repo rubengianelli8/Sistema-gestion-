@@ -387,6 +387,15 @@ const Productos = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => handleOpenQrDialog(product)}
+                        title="Generar código QR"
+                        data-testid={`generate-qr-${product.id}`}
+                      >
+                        <QrCode className="h-4 w-4 text-purple-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleComparePrices(product)}
                         title="Comparar precios de proveedores"
                         data-testid={`compare-prices-${product.id}`}
