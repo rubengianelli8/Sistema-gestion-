@@ -690,6 +690,68 @@ const Productos = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* QR Code Dialog */}
+      <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5 text-purple-600" />
+              Código QR del Producto
+            </DialogTitle>
+            <DialogDescription>
+              {qrProduct?.nombre}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {qrProduct && (
+            <div className="space-y-4">
+              <div className="flex justify-center p-4 bg-white rounded-lg border">
+                <QRCodeSVG
+                  id="qr-code-svg"
+                  value={generateQrData(qrProduct)}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              
+              <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-500">Producto:</span>
+                  <span className="text-sm font-medium">{qrProduct.nombre}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-500">Código:</span>
+                  <span className="text-sm font-mono">
+                    {qrProduct.codigo_barras || `QR-${qrProduct.id.slice(0, 8)}`}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-slate-500">Precio Minorista:</span>
+                  <span className="text-sm font-bold text-green-600">
+                    ${qrProduct.precio_minorista}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-xs text-slate-400 text-center">
+                Este QR puede ser escaneado desde el módulo de Ventas para agregar el producto al carrito.
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setQrDialogOpen(false)}>
+              Cerrar
+            </Button>
+            <Button onClick={handleDownloadQr} data-testid="download-qr-button">
+              <DownloadCloud className="mr-2 h-4 w-4" />
+              Descargar QR
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
