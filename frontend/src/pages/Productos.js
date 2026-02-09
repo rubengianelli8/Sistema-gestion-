@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { productsAPI, categoriesAPI } from '../services/api';
+import { productsAPI, categoriesAPI, supplierPricesAPI } from '../services/api';
 import { getErrorMessage } from '../utils/errorHandler';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -41,7 +41,7 @@ import {
 } from '../components/ui/alert-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import { Plus, Pencil, Trash2, Search, Upload, Download } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, Upload, Download, DollarSign, TrendingDown, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Productos = () => {
@@ -54,6 +54,9 @@ const Productos = () => {
   const [editingProduct, setEditingProduct] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [priceCompareOpen, setPriceCompareOpen] = useState(false);
+  const [priceCompareData, setPriceCompareData] = useState(null);
+  const [priceCompareLoading, setPriceCompareLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
     descripcion: '',
@@ -196,6 +199,33 @@ const Productos = () => {
     product.codigo_barras?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleComparePrices = async (product) => {
+    setPriceCompareLoading(true);
+    setPriceCompareOpen(true);
+    try {
+      const response = await supplierPricesAPI.comparePrices(product.id);
+      setPriceCompareData(response.data);
+    } catch (error) {
+      toast.error('Error al cargar precios de proveedores');
+      setPriceCompareOpen(false);
+    } finally {
+      setPriceCompareLoading(false);
+    }
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+    }).format(value);
+  };
+
+  const calculateSavings = (currentPrice, bestPrice) => {
+    if (!currentPrice || !bestPrice) return null;
+    const savings = ((currentPrice - bestPrice) / currentPrice) * 100;
+    return savings > 0 ? savings.toFixed(1) : null;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -288,7 +318,16 @@ const Productos = () => {
                         {product.stock_actual}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right space-x-2">
+                    <TableCell className="text-right space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleComparePrices(product)}
+                        title="Comparar precios de proveedores"
+                        data-testid={`compare-prices-${product.id}`}
+                      >
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                      </Button>
                       {canEdit && (
                         <Button
                           variant="ghost"
@@ -449,6 +488,134 @@ const Productos = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Price Comparison Dialog */}
+      <Dialog open={priceCompareOpen} onOpenChange={setPriceCompareOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-green-600" />
+              Comparativa de Precios
+            </DialogTitle>
+            <DialogDescription>
+              {priceCompareData?.producto?.nombre}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {priceCompareLoading ? (
+            <div className="text-center py-8">Cargando precios...</div>
+          ) : priceCompareData ? (
+            <div className="space-y-4">
+              {/* Best Price Highlight */}
+              {priceCompareData.mejor_precio && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-green-700 font-medium">Mejor Precio Encontrado</p>
+                      <p className="text-2xl font-bold text-green-800">
+                        {formatCurrency(priceCompareData.mejor_precio.precio)}
+                      </p>
+                      <p className="text-sm text-green-600 flex items-center gap-1 mt-1">
+                        <Building2 className="h-4 w-4" />
+                        {priceCompareData.mejor_precio.proveedor_nombre}
+                      </p>
+                    </div>
+                    {priceCompareData.producto?.precio_minorista && (
+                      <div className="text-right">
+                        <p className="text-xs text-slate-500">Tu precio actual</p>
+                        <p className="text-lg font-semibold text-slate-600">
+                          {formatCurrency(priceCompareData.producto.precio_minorista)}
+                        </p>
+                        {calculateSavings(
+                          priceCompareData.producto.precio_minorista,
+                          priceCompareData.mejor_precio.precio
+                        ) && (
+                          <Badge variant="secondary" className="bg-green-100 text-green-800 mt-1">
+                            Ahorra {calculateSavings(
+                              priceCompareData.producto.precio_minorista,
+                              priceCompareData.mejor_precio.precio
+                            )}%
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Price List */}
+              {priceCompareData.precios.length > 0 ? (
+                <div>
+                  <p className="text-sm font-medium text-slate-700 mb-2">
+                    {priceCompareData.total_proveedores} proveedor{priceCompareData.total_proveedores !== 1 ? 'es' : ''} con precio registrado
+                  </p>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Proveedor</TableHead>
+                        <TableHead>Código Proveedor</TableHead>
+                        <TableHead className="text-right">Precio</TableHead>
+                        <TableHead className="text-right">Diferencia</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {priceCompareData.precios.map((price, index) => (
+                        <TableRow 
+                          key={price.id || index}
+                          className={index === 0 ? 'bg-green-50' : ''}
+                        >
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {index === 0 && (
+                                <Badge variant="default" className="bg-green-600">
+                                  Mejor
+                                </Badge>
+                              )}
+                              {price.proveedor_nombre}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-slate-500">
+                            {price.codigo_proveedor || '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {formatCurrency(price.precio)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {index > 0 && priceCompareData.mejor_precio && (
+                              <span className="text-red-600 text-sm">
+                                +{formatCurrency(price.precio - priceCompareData.mejor_precio.precio)}
+                              </span>
+                            )}
+                            {index === 0 && (
+                              <span className="text-green-600 text-sm font-medium">
+                                Mejor opción
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <DollarSign className="h-12 w-12 mx-auto mb-2 text-slate-300" />
+                  <p>No hay precios de proveedores registrados para este producto.</p>
+                  <p className="text-sm mt-1">
+                    Puedes agregar precios desde el módulo de Proveedores.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPriceCompareOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
