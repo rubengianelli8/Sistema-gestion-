@@ -13,6 +13,9 @@ import {
   FolderOpen,
   Menu,
   X,
+  Warehouse,
+  Building2,
+  ShoppingBag,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
@@ -53,6 +56,24 @@ const menuItems = [
     icon: FileText,
     path: '/dashboard/presupuestos',
     permission: 'presupuestos:ver',
+  },
+  {
+    title: 'Depósitos',
+    icon: Warehouse,
+    path: '/dashboard/depositos',
+    permission: 'depositos:ver',
+  },
+  {
+    title: 'Proveedores',
+    icon: Building2,
+    path: '/dashboard/proveedores',
+    permission: 'proveedores:ver',
+  },
+  {
+    title: 'Compras',
+    icon: ShoppingBag,
+    path: '/dashboard/compras',
+    permission: 'compras:ver',
   },
   {
     title: 'Configuración',

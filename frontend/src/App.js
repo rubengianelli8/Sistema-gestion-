@@ -11,6 +11,9 @@ import Clientes from './pages/Clientes';
 import Ventas from './pages/Ventas';
 import Presupuestos from './pages/Presupuestos';
 import Usuarios from './pages/Usuarios';
+import Depositos from './pages/Depositos';
+import Proveedores from './pages/Proveedores';
+import Compras from './pages/Compras';
 import '@/App.css';
 
 function App() {
@@ -80,6 +83,33 @@ function App() {
             element={
               <DashboardLayout>
                 <Usuarios />
+              </DashboardLayout>
+            }
+          />
+          
+          <Route
+            path="/dashboard/depositos"
+            element={
+              <DashboardLayout>
+                <Depositos />
+              </DashboardLayout>
+            }
+          />
+          
+          <Route
+            path="/dashboard/proveedores"
+            element={
+              <DashboardLayout>
+                <Proveedores />
+              </DashboardLayout>
+            }
+          />
+          
+          <Route
+            path="/dashboard/compras"
+            element={
+              <DashboardLayout>
+                <Compras />
               </DashboardLayout>
             }
           />
