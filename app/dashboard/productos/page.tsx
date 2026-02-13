@@ -32,7 +32,7 @@ export default async function ProductosPage() {
 
   return (
     <div className="p-6">
-      <ProductsTable products={products} />
+      <ProductsTable products={products as any} />
     </div>
   );
 }

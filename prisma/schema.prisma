@@ -157,6 +157,7 @@ model Customer {
   direccion             String?
   limiteCredito         Float     @default(0)
   saldoCuentaCorriente  Float     @default(0)
+  activo                Boolean   @default(true)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -166,6 +167,7 @@ model Customer {
 
   @@index([email])
   @@index([dni])
+  @@index([activo])
 }
 
 // Sale Model

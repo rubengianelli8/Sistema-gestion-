@@ -1,6 +1,8 @@
 import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { getAllCustomersAction } from "@/app/actions/customer.actions";
 import { redirect } from "next/navigation";
 import { requirePermission, Permission } from "@/lib/permissions";
+import { CustomersTable } from "@/components/customers/customers-table";
 
 export default async function ClientesPage() {
   const session = await auth();
@@ -15,12 +17,22 @@ export default async function ClientesPage() {
     redirect("/dashboard");
   }
 
+  const result = await getAllCustomersAction();
+
+  if (!result.success) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Clientes</h1>
+        <p className="text-red-600">Error: {result.error}</p>
+      </div>
+    );
+  }
+
+  const customers = result.data || [];
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Clientes</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-600">Gestión de clientes - En desarrollo</p>
-      </div>
+      <CustomersTable customers={customers} />
     </div>
   );
 }

@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ProductForm } from "./product-form";
-import { ImportProductsDialog } from "./import-products-dialog";
 import { deleteProductAction } from "@/app/actions/product.actions";
-import { Pencil, Trash2, Plus, Upload } from "lucide-react";
+import { Pencil, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Product {
@@ -25,7 +24,6 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
   const [formOpen, setFormOpen] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -67,16 +65,10 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
     <>
       <div className="mb-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">Productos</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setImportOpen(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Importar
-          </Button>
-          <Button onClick={handleAdd}>
-            <Plus className="w-4 h-4 mr-2" />
-            Agregar Producto
-          </Button>
-        </div>
+        <Button onClick={handleAdd}>
+          <Plus className="w-4 h-4 mr-2" />
+          Agregar Producto
+        </Button>
       </div>
 
       <div className="overflow-x-auto bg-white rounded-lg shadow">
@@ -136,12 +128,6 @@ export function ProductsTable({ products: initialProducts }: ProductsTableProps)
         open={formOpen}
         onOpenChange={setFormOpen}
         product={editingProduct}
-        onSuccess={handleFormSuccess}
-      />
-      
-      <ImportProductsDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
         onSuccess={handleFormSuccess}
       />
     </>
