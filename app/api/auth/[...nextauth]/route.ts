@@ -4,6 +4,7 @@ import { authConfig } from "@/auth.config";
 import prisma from "@/lib/prisma";
 
 import { UserRole } from "@prisma/client";
+import { verifyPassword } from "@/lib/auth";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -34,16 +35,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Usuario inactivo");
         }
 
-       /*  // Verificar contraseña
+        // Verificar contraseña
         const isValid = await verifyPassword(
           credentials.password as string,
           user.password
-        ); */
+        );
 
-/*         if (!isValid) {
+        if (!isValid) {
           return null;
         }
- */
+
         // Actualizar último login
         await prisma.user.update({
           where: { id: user.id },

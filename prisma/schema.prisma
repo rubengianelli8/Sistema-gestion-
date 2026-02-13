@@ -42,7 +42,7 @@ enum PurchaseStatus {
 
 // User Model (con soporte para NextAuth)
 model User {
-  id            String    @id @default(cuid())
+  id            Int       @id @default(autoincrement())
   email         String    @unique
   emailVerified DateTime?
   name          String
@@ -69,8 +69,8 @@ model User {
 
 // NextAuth models
 model Account {
-  id                String  @id @default(cuid())
-  userId            String
+  id                Int     @id @default(autoincrement())
+  userId            Int
   type              String
   provider          String
   providerAccountId String
@@ -89,9 +89,9 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           Int      @id @default(autoincrement())
   sessionToken String   @unique
-  userId       String
+  userId       Int
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -108,7 +108,7 @@ model VerificationToken {
 
 // Category Model
 model Category {
-  id          String    @id @default(cuid())
+  id          Int       @id @default(autoincrement())
   nombre      String    @unique
   descripcion String?
   createdAt   DateTime  @default(now())
@@ -121,11 +121,11 @@ model Category {
 
 // Product Model
 model Product {
-  id               String    @id @default(cuid())
+  id               Int       @id @default(autoincrement())
   nombre           String
   descripcion      String?
   codigoBarras     String?   @unique
-  categoriaId      String?
+  categoriaId      Int?
   precioMinorista  Float
   precioMayorista  Float
   stockActual      Int       @default(0)
@@ -149,7 +149,7 @@ model Product {
 
 // Customer Model
 model Customer {
-  id                    String    @id @default(cuid())
+  id                    Int       @id @default(autoincrement())
   nombre                String
   dni                   String?
   email                 String?   @unique
@@ -170,9 +170,9 @@ model Customer {
 
 // Sale Model
 model Sale {
-  id            String        @id @default(cuid())
-  clienteId     String?
-  vendedorId    String
+  id            Int           @id @default(autoincrement())
+  clienteId     Int?
+  vendedorId    Int
   vendedorNombre String
   total         Float
   estado        SaleStatus   @default(COMPLETADA)
@@ -194,9 +194,9 @@ model Sale {
 
 // SaleItem Model
 model SaleItem {
-  id            String    @id @default(cuid())
-  saleId        String
-  productoId    String
+  id            Int       @id @default(autoincrement())
+  saleId        Int
+  productoId    Int
   productoNombre String
   cantidad      Int
   precioUnitario Float
@@ -212,15 +212,15 @@ model SaleItem {
 
 // Quote Model
 model Quote {
-  id                  String      @id @default(cuid())
-  clienteId           String
-  vendedorId          String
+  id                  Int         @id @default(autoincrement())
+  clienteId           Int
+  vendedorId          Int
   vendedorNombre      String
   total               Float
   estado              QuoteStatus @default(PENDIENTE)
   validezDias         Int         @default(15)
   notas               String?
-  convertidoAVentaId  String?
+  convertidoAVentaId  Int?
   fecha               DateTime    @default(now())
   createdAt           DateTime    @default(now())
 
@@ -237,9 +237,9 @@ model Quote {
 
 // QuoteItem Model
 model QuoteItem {
-  id            String    @id @default(cuid())
-  quoteId       String
-  productoId    String
+  id            Int       @id @default(autoincrement())
+  quoteId       Int
+  productoId    Int
   productoNombre String
   cantidad      Int
   precioUnitario Float
@@ -255,7 +255,7 @@ model QuoteItem {
 
 // Warehouse Model
 model Warehouse {
-  id        String    @id @default(cuid())
+  id        Int       @id @default(autoincrement())
   nombre    String    @unique
   direccion String?
   encargado String?
@@ -273,7 +273,7 @@ model Warehouse {
 
 // Supplier Model
 model Supplier {
-  id        String    @id @default(cuid())
+  id        Int       @id @default(autoincrement())
   nombre    String
   contacto  String?
   email     String?
@@ -294,10 +294,10 @@ model Supplier {
 
 // SupplierPrice Model
 model SupplierPrice {
-  id              String    @id @default(cuid())
-  productoId      String
+  id              Int       @id @default(autoincrement())
+  productoId      Int
   productoNombre  String
-  proveedorId     String
+  proveedorId     Int
   proveedorNombre String
   precio          Float
   codigoProveedor String?
@@ -315,10 +315,10 @@ model SupplierPrice {
 
 // Purchase Model
 model Purchase {
-  id            String          @id @default(cuid())
-  proveedorId   String
+  id            Int             @id @default(autoincrement())
+  proveedorId   Int
   proveedorNombre String
-  depositoId    String
+  depositoId    Int
   depositoNombre String
   total         Float
   estado        PurchaseStatus  @default(PENDIENTE)
@@ -342,9 +342,9 @@ model Purchase {
 
 // PurchaseItem Model
 model PurchaseItem {
-  id            String    @id @default(cuid())
-  purchaseId    String
-  productoId    String
+  id            Int       @id @default(autoincrement())
+  purchaseId    Int
+  productoId    Int
   productoNombre String
   cantidad      Int
   precioUnitario Float
@@ -360,9 +360,9 @@ model PurchaseItem {
 
 // ProductStock Model (Stock por depósito)
 model ProductStock {
-  id              String    @id @default(cuid())
-  productoId      String
-  depositoId       String
+  id              Int       @id @default(autoincrement())
+  productoId      Int
+  depositoId      Int
   cantidad         Int       @default(0)
   ubicacionInterna String?
 
@@ -377,8 +377,8 @@ model ProductStock {
 
 // AuditLog Model
 model AuditLog {
-  id            String    @id @default(cuid())
-  usuarioId     String
+  id            Int       @id @default(autoincrement())
+  usuarioId     Int
   usuarioNombre String
   accion        String
   modulo        String
