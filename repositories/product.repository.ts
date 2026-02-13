@@ -4,7 +4,7 @@ export interface CreateProductDto {
   nombre: string;
   descripcion?: string;
   codigoBarras?: string;
-  categoriaId?: string;
+  categoriaId?: number;
   precioMinorista: number;
   precioMayorista: number;
   stockActual: number;
@@ -16,7 +16,7 @@ export interface UpdateProductDto {
   nombre?: string;
   descripcion?: string;
   codigoBarras?: string;
-  categoriaId?: string;
+  categoriaId?: number;
   precioMinorista?: number;
   precioMayorista?: number;
   stockActual?: number;
@@ -38,7 +38,7 @@ export class ProductRepository {
     });
   }
 
-  async findById(id: string) {
+  async findById(id: number) {
     return await this.prisma.product.findUnique({
       where: { id },
       include: { categoria: true },
@@ -64,7 +64,7 @@ export class ProductRepository {
     });
   }
 
-  async update(id: string, data: UpdateProductDto) {
+  async update(id: number, data: UpdateProductDto) {
     return await this.prisma.product.update({
       where: { id },
       data,
@@ -72,16 +72,16 @@ export class ProductRepository {
     });
   }
 
-  async delete(id: string) {
+  async delete(id: number) {
     return await this.prisma.product.delete({ where: { id } });
   }
 
-  async exists(id: string): Promise<boolean> {
+  async exists(id: number): Promise<boolean> {
     const count = await this.prisma.product.count({ where: { id } });
     return count > 0;
   }
 
-  async barcodeExists(codigoBarras: string, excludeId?: string): Promise<boolean> {
+  async barcodeExists(codigoBarras: string, excludeId?: number): Promise<boolean> {
     if (!codigoBarras) return false;
     const count = await this.prisma.product.count({
       where: {

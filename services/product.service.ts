@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 export class ProductService {
   constructor(private readonly repository: ProductRepository) {}
 
-  async createProduct(data: CreateProductDto, currentUserId: string, currentUserName: string) {
+  async createProduct(data: CreateProductDto, currentUserId: number, currentUserName: string) {
     if (data.codigoBarras) {
       const barcodeExists = await this.repository.barcodeExists(data.codigoBarras);
       if (barcodeExists) {
@@ -31,7 +31,7 @@ export class ProductService {
     return await this.repository.findAll();
   }
 
-  async getProductById(id: string) {
+  async getProductById(id: number) {
     const product = await this.repository.findById(id);
     if (!product) {
       throw new Error("Producto no encontrado");
@@ -43,7 +43,7 @@ export class ProductService {
     return await this.repository.search(query);
   }
 
-  async updateProduct(id: string, data: UpdateProductDto, currentUserId: string, currentUserName: string) {
+  async updateProduct(id: number, data: UpdateProductDto, currentUserId: number, currentUserName: string) {
     const exists = await this.repository.exists(id);
     if (!exists) {
       throw new Error("Producto no encontrado");
@@ -71,7 +71,7 @@ export class ProductService {
     return product;
   }
 
-  async deleteProduct(id: string, currentUserId: string, currentUserName: string) {
+  async deleteProduct(id: number, currentUserId: number, currentUserName: string) {
     const exists = await this.repository.exists(id);
     if (!exists) {
       throw new Error("Producto no encontrado");
