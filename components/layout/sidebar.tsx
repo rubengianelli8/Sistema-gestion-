@@ -19,15 +19,15 @@ import { cn } from "@/lib/utils";
 
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/productos", label: "Productos", icon: Package },
-  { href: "/categorias", label: "Categorías", icon: Package },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/ventas", label: "Ventas", icon: ShoppingCart },
-  { href: "/presupuestos", label: "Presupuestos", icon: FileText },
-  { href: "/depositos", label: "Depósitos", icon: Warehouse },
-  { href: "/proveedores", label: "Proveedores", icon: Truck },
-  { href: "/compras", label: "Compras", icon: ShoppingBag },
-  { href: "/usuarios", label: "Usuarios", icon: Settings },
+  { href: "/dashboard/productos", label: "Productos", icon: Package },
+  { href: "/dashboard/categorias", label: "Categorías", icon: Package },
+  { href: "/dashboard/clientes", label: "Clientes", icon: Users },
+  { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },
+  { href: "/dashboard/presupuestos", label: "Presupuestos", icon: FileText },
+  { href: "/dashboard/depositos", label: "Depósitos", icon: Warehouse },
+  { href: "/dashboard/proveedores", label: "Proveedores", icon: Truck },
+  { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag },
+  { href: "/dashboard/usuarios", label: "Usuarios", icon: Settings },
 ];
 
 export function Sidebar() {
