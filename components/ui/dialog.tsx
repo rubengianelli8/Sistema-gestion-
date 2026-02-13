@@ -5,9 +5,10 @@ interface DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
+  maxWidth?: string;
 }
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
+export function Dialog({ open, onOpenChange, children, maxWidth = "max-w-lg" }: DialogProps) {
   if (!open) return null;
 
   return (
@@ -16,7 +17,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 bg-white rounded-lg shadow-lg max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className={cn("relative z-50 bg-white rounded-lg shadow-lg w-full mx-4 max-h-[90vh] overflow-y-auto", maxWidth)}>
         {children}
       </div>
     </div>
