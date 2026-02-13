@@ -1,0 +1,395 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  VENDEDOR
+  ALMACENERO
+  CONTADOR
+}
+
+enum SaleStatus {
+  COMPLETADA
+  PENDIENTE
+  ANULADA
+}
+
+enum QuoteStatus {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+  CONVERTIDO
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+}
+
+enum PurchaseStatus {
+  PENDIENTE
+  RECIBIDA
+  PARCIAL
+  CANCELADA
+}
+
+// User Model (con soporte para NextAuth)
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String
+  password      String    // password_hash
+  rol           UserRole  @default(ADMIN)
+  estado        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLogin     DateTime?
+
+  // Relaciones
+  sales         Sale[]
+  quotes        Quote[]
+  auditLogs     AuditLog[]
+
+  // NextAuth fields
+  accounts      Account[]
+  sessions     Session[]
+
+  @@index([email])
+  @@index([rol])
+  @@index([estado])
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Category Model
+model Category {
+  id          String    @id @default(cuid())
+  nombre      String    @unique
+  descripcion String?
+  createdAt   DateTime  @default(now())
+
+  // Relaciones
+  products    Product[]
+
+  @@index([nombre])
+}
+
+// Product Model
+model Product {
+  id               String    @id @default(cuid())
+  nombre           String
+  descripcion      String?
+  codigoBarras     String?   @unique
+  categoriaId      String?
+  precioMinorista  Float
+  precioMayorista  Float
+  stockActual      Int       @default(0)
+  stockMinimo      Int       @default(0)
+  imagenUrl        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relaciones
+  categoria        Category?         @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  saleItems        SaleItem[]
+  quoteItems       QuoteItem[]
+  purchaseItems    PurchaseItem[]
+  supplierPrices   SupplierPrice[]
+  productStocks    ProductStock[]
+
+  @@index([nombre])
+  @@index([codigoBarras])
+  @@index([categoriaId])
+}
+
+// Customer Model
+model Customer {
+  id                    String    @id @default(cuid())
+  nombre                String
+  dni                   String?
+  email                 String?   @unique
+  telefono              String?
+  direccion             String?
+  limiteCredito         Float     @default(0)
+  saldoCuentaCorriente  Float     @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relaciones
+  sales                 Sale[]
+  quotes                Quote[]
+
+  @@index([email])
+  @@index([dni])
+}
+
+// Sale Model
+model Sale {
+  id            String        @id @default(cuid())
+  clienteId     String?
+  vendedorId    String
+  vendedorNombre String
+  total         Float
+  estado        SaleStatus   @default(COMPLETADA)
+  metodoPago    PaymentMethod
+  notas         String?
+  fecha         DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+
+  // Relaciones
+  cliente       Customer?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  vendedor       User         @relation(fields: [vendedorId], references: [id])
+  items         SaleItem[]
+
+  @@index([fecha])
+  @@index([vendedorId])
+  @@index([clienteId])
+  @@index([estado])
+}
+
+// SaleItem Model
+model SaleItem {
+  id            String    @id @default(cuid())
+  saleId        String
+  productoId    String
+  productoNombre String
+  cantidad      Int
+  precioUnitario Float
+  subtotal      Float
+
+  // Relaciones
+  sale          Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  producto      Product   @relation(fields: [productoId], references: [id])
+
+  @@index([saleId])
+  @@index([productoId])
+}
+
+// Quote Model
+model Quote {
+  id                  String      @id @default(cuid())
+  clienteId           String
+  vendedorId          String
+  vendedorNombre      String
+  total               Float
+  estado              QuoteStatus @default(PENDIENTE)
+  validezDias         Int         @default(15)
+  notas               String?
+  convertidoAVentaId  String?
+  fecha               DateTime    @default(now())
+  createdAt           DateTime    @default(now())
+
+  // Relaciones
+  cliente             Customer    @relation(fields: [clienteId], references: [id])
+  vendedor            User        @relation(fields: [vendedorId], references: [id])
+  items               QuoteItem[]
+
+  @@index([fecha])
+  @@index([vendedorId])
+  @@index([clienteId])
+  @@index([estado])
+}
+
+// QuoteItem Model
+model QuoteItem {
+  id            String    @id @default(cuid())
+  quoteId       String
+  productoId    String
+  productoNombre String
+  cantidad      Int
+  precioUnitario Float
+  subtotal      Float
+
+  // Relaciones
+  quote         Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  producto      Product   @relation(fields: [productoId], references: [id])
+
+  @@index([quoteId])
+  @@index([productoId])
+}
+
+// Warehouse Model
+model Warehouse {
+  id        String    @id @default(cuid())
+  nombre    String    @unique
+  direccion String?
+  encargado String?
+  telefono  String?
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  // Relaciones
+  purchases     Purchase[]
+  productStocks ProductStock[]
+
+  @@index([nombre])
+  @@index([activo])
+}
+
+// Supplier Model
+model Supplier {
+  id        String    @id @default(cuid())
+  nombre    String
+  contacto  String?
+  email     String?
+  telefono  String?
+  direccion String?
+  cuit      String?
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relaciones
+  supplierPrices SupplierPrice[]
+  purchases      Purchase[]
+
+  @@index([nombre])
+  @@index([activo])
+}
+
+// SupplierPrice Model
+model SupplierPrice {
+  id              String    @id @default(cuid())
+  productoId      String
+  productoNombre  String
+  proveedorId     String
+  proveedorNombre String
+  precio          Float
+  codigoProveedor String?
+  fechaActualizacion DateTime @default(now()) @updatedAt
+
+  // Relaciones
+  producto        Product   @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  proveedor       Supplier  @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, proveedorId])
+  @@index([productoId])
+  @@index([proveedorId])
+  @@index([fechaActualizacion])
+}
+
+// Purchase Model
+model Purchase {
+  id            String          @id @default(cuid())
+  proveedorId   String
+  proveedorNombre String
+  depositoId    String
+  depositoNombre String
+  total         Float
+  estado        PurchaseStatus  @default(PENDIENTE)
+  numeroFactura String?
+  notas         String?
+  recibidaPor   String?
+  fechaRecepcion DateTime?
+  fecha         DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+
+  // Relaciones
+  proveedor     Supplier        @relation(fields: [proveedorId], references: [id])
+  deposito      Warehouse        @relation(fields: [depositoId], references: [id])
+  items         PurchaseItem[]
+
+  @@index([proveedorId])
+  @@index([depositoId])
+  @@index([fecha])
+  @@index([estado])
+}
+
+// PurchaseItem Model
+model PurchaseItem {
+  id            String    @id @default(cuid())
+  purchaseId    String
+  productoId    String
+  productoNombre String
+  cantidad      Int
+  precioUnitario Float
+  subtotal      Float
+
+  // Relaciones
+  purchase      Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  producto      Product   @relation(fields: [productoId], references: [id])
+
+  @@index([purchaseId])
+  @@index([productoId])
+}
+
+// ProductStock Model (Stock por depósito)
+model ProductStock {
+  id              String    @id @default(cuid())
+  productoId      String
+  depositoId       String
+  cantidad         Int       @default(0)
+  ubicacionInterna String?
+
+  // Relaciones
+  producto        Product   @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  deposito        Warehouse @relation(fields: [depositoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, depositoId])
+  @@index([productoId])
+  @@index([depositoId])
+}
+
+// AuditLog Model
+model AuditLog {
+  id            String    @id @default(cuid())
+  usuarioId     String
+  usuarioNombre String
+  accion        String
+  modulo        String
+  detalles      String?
+  timestamp     DateTime  @default(now())
+
+  // Relaciones
+  usuario       User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+  @@index([usuarioId])
+  @@index([modulo])
+}
+
