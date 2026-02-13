@@ -1,6 +1,10 @@
 import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { getAllQuotesAction } from "@/app/actions/quote.actions";
+import { getAllCustomersAction } from "@/app/actions/customer.actions";
+import { getAllProductsAction } from "@/app/actions/product.actions";
 import { redirect } from "next/navigation";
 import { requirePermission, Permission } from "@/lib/permissions";
+import { QuotesTable } from "@/components/quotes/quotes-table";
 
 export default async function PresupuestosPage() {
   const session = await auth();
@@ -15,12 +19,28 @@ export default async function PresupuestosPage() {
     redirect("/dashboard");
   }
 
+  const [quotesResult, customersResult, productsResult] = await Promise.all([
+    getAllQuotesAction(),
+    getAllCustomersAction(),
+    getAllProductsAction(),
+  ]);
+
+  if (!quotesResult.success) {
+    return (
+      <div className="p-6">
+        <h1 className="text-2xl font-bold mb-4">Presupuestos</h1>
+        <p className="text-red-600">Error: {quotesResult.error}</p>
+      </div>
+    );
+  }
+
+  const quotes = quotesResult.data || [];
+  const customers = customersResult.success ? customersResult.data || [] : [];
+  const products = productsResult.success ? productsResult.data || [] : [];
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Presupuestos</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <p className="text-gray-600">Gestión de presupuestos - En desarrollo</p>
-      </div>
+      <QuotesTable quotes={quotes} customers={customers} products={products} />
     </div>
   );
 }

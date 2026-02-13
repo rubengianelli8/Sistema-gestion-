@@ -8,6 +8,8 @@ import { CustomerRepository } from "@/repositories/customer.repository";
 import { CustomerService } from "./customer.service";
 import { SaleRepository } from "@/repositories/sale.repository";
 import { SaleService } from "./sale.service";
+import { QuoteRepository } from "@/repositories/quote.repository";
+import { QuoteService } from "./quote.service";
 
 // Repositories
 export const userRepository = new UserRepository();
@@ -15,6 +17,7 @@ export const categoryRepository = new CategoryRepository();
 export const customerRepository = new CustomerRepository();
 export const productRepository = new ProductRepository();
 export const saleRepository = new SaleRepository();
+export const quoteRepository = new QuoteRepository();
 
 // Services
 export const userService = new UserService(userRepository);
@@ -22,4 +25,5 @@ export const categoryService = new CategoryService(categoryRepository);
 export const productService = new ProductService(productRepository);
 export const customerService = new CustomerService(customerRepository);
 export const saleService = new SaleService(saleRepository);
+export const quoteService = new QuoteService(quoteRepository);
 
