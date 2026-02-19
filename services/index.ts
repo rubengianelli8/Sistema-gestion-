@@ -10,6 +10,7 @@ import { SaleRepository } from "@/repositories/sale.repository";
 import { SaleService } from "./sale.service";
 import { QuoteRepository } from "@/repositories/quote.repository";
 import { QuoteService } from "./quote.service";
+import { AfipService, AfipConfig } from "./afip.service";
 
 // Repositories
 export const userRepository = new UserRepository();
@@ -26,4 +27,34 @@ export const productService = new ProductService(productRepository);
 export const customerService = new CustomerService(customerRepository);
 export const saleService = new SaleService(saleRepository);
 export const quoteService = new QuoteService(quoteRepository);
+
+// AFIP Service - Se inicializa con configuración desde variables de entorno
+export function createAfipService(): AfipService | null {
+  const cuit = process.env.AFIP_CUIT;
+  const puntoVenta = process.env.AFIP_PUNTO_VENTA;
+  const ambiente = process.env.AFIP_AMBIENTE || "testing";
+  const certPath = process.env.AFIP_CERT_PATH;
+  const keyPath = process.env.AFIP_KEY_PATH;
+  const certContent = process.env.AFIP_CERT_CONTENT;
+  const keyContent = process.env.AFIP_KEY_CONTENT;
+
+  if (!cuit || !puntoVenta) {
+    console.warn("Configuración de AFIP incompleta. Variables requeridas: AFIP_CUIT, AFIP_PUNTO_VENTA");
+    return null;
+  }
+
+  const config: AfipConfig = {
+    cuit,
+    puntoVenta: parseInt(puntoVenta),
+    ambiente: ambiente as "testing" | "production",
+    certPath,
+    keyPath,
+    certContent,
+    keyContent,
+  };
+
+  return new AfipService(config);
+}
+
+export const afipService = createAfipService();
 

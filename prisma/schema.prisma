@@ -182,6 +182,14 @@ model Sale {
   notas         String?
   fecha         DateTime      @default(now())
   createdAt     DateTime      @default(now())
+  
+  // Campos de facturación AFIP
+  facturaAFIP       Boolean   @default(false)
+  facturaNumero     Int?
+  facturaCAE        String?
+  facturaCAEFchVto  DateTime?
+  facturaPuntoVenta Int?
+  facturaTipo       Int?      // 1: Factura A, 6: Factura B, 11: Factura C
 
   // Relaciones
   cliente       Customer?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
@@ -192,6 +200,8 @@ model Sale {
   @@index([vendedorId])
   @@index([clienteId])
   @@index([estado])
+  @@index([facturaAFIP])
+  @@index([facturaCAE])
 }
 
 // SaleItem Model
