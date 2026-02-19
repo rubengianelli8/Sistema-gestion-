@@ -22,6 +22,7 @@ async function createAdminUser() {
         password: hashedPassword,
         rol: UserRole.ADMIN,
         estado: true,
+        businessId: 1, // Asumiendo que el negocio con ID 1 existe
       },
     });
 
@@ -45,4 +46,3 @@ async function createAdminUser() {
 
 // Ejecutar el script
 createAdminUser();
-

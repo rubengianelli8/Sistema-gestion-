@@ -53,6 +53,7 @@ model Business {
   taxes       Tax[]
   categories  Category[]
   clients     Client[]
+  users       User[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -66,7 +67,6 @@ model Branch {
   number      Int @default(1)
   businessId  Int
   business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  users       User[]
   products    Product[]
   sales       Sale[]
   purchases   Purchase[]
@@ -88,13 +88,13 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   lastLogin     DateTime?
-  branchId      Int
+  businessId    Int
 
 
   // Relaciones
   sales         Sale[]
   quotes        Quote[]
-  branch        Branch   @relation(fields: [branchId], references: [id])
+  business      Business   @relation(fields: [businessId], references: [id])
 
 
   @@index([email])
