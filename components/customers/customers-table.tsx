@@ -10,12 +10,10 @@ import { useRouter } from "next/navigation";
 interface Customer {
   id: number;
   nombre: string;
-  dni?: string | null;
+  dni: string;
   email?: string | null;
-  telefono?: string | null;
-  direccion?: string | null;
-  limiteCredito: number;
-  saldoCuentaCorriente: number;
+  telefono: string;
+  direccion: string;
   activo: boolean;
 }
 
@@ -87,15 +85,14 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
               <th className="border border-gray-300 px-4 py-2 text-left">DNI</th>
               <th className="border border-gray-300 px-4 py-2 text-left">Email</th>
               <th className="border border-gray-300 px-4 py-2 text-left">Teléfono</th>
-              <th className="border border-gray-300 px-4 py-2 text-left">Límite Crédito</th>
-              <th className="border border-gray-300 px-4 py-2 text-left">Saldo Cta. Cte.</th>
+              <th className="border border-gray-300 px-4 py-2 text-left">Dirección</th>
               <th className="border border-gray-300 px-4 py-2 text-left">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {activeCustomers.length === 0 ? (
               <tr>
-                <td colSpan={7} className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                <td colSpan={6} className="border border-gray-300 px-4 py-8 text-center text-gray-500">
                   No hay clientes registrados
                 </td>
               </tr>
@@ -103,11 +100,10 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
               activeCustomers.map((customer) => (
                 <tr key={customer.id} className="hover:bg-gray-50">
                   <td className="border border-gray-300 px-4 py-2">{customer.nombre}</td>
-                  <td className="border border-gray-300 px-4 py-2">{customer.dni || "-"}</td>
+                  <td className="border border-gray-300 px-4 py-2">{customer.dni}</td>
                   <td className="border border-gray-300 px-4 py-2">{customer.email || "-"}</td>
-                  <td className="border border-gray-300 px-4 py-2">{customer.telefono || "-"}</td>
-                  <td className="border border-gray-300 px-4 py-2">${customer.limiteCredito.toFixed(2)}</td>
-                  <td className="border border-gray-300 px-4 py-2">${customer.saldoCuentaCorriente.toFixed(2)}</td>
+                  <td className="border border-gray-300 px-4 py-2">{customer.telefono}</td>
+                  <td className="border border-gray-300 px-4 py-2">{customer.direccion}</td>
                   <td className="border border-gray-300 px-4 py-2">
                     <div className="flex gap-2">
                       <Button
