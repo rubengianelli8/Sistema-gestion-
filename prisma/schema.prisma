@@ -11,6 +11,7 @@ enum UserRole {
   ADMIN
   VENDEDOR
   ALMACENERO
+  REPOSITOR
   CONTADOR
 }
 
@@ -40,6 +41,41 @@ enum PurchaseStatus {
   CANCELADA
 }
 
+
+
+model Business {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  telefono    String?
+  email       String?
+  cuit        String?
+  branches    Branch[]
+  taxes       Tax[]
+  categories  Category[]
+  clients     Client[]
+  users       User[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Branch {
+  id          Int       @id @default(autoincrement())
+  direccion   String?
+  telefono    String?
+  email       String?
+  cuit        String?
+  number      Int @default(1)
+  businessId  Int
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  products    Product[]
+  sales       Sale[]
+  purchases   Purchase[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([number, businessId])
+}
+
 // User Model (con soporte para NextAuth)
 model User {
   id            Int       @id @default(autoincrement())
@@ -52,59 +88,20 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   lastLogin     DateTime?
+  businessId    Int
+
 
   // Relaciones
   sales         Sale[]
   quotes        Quote[]
-  auditLogs     AuditLog[]
+  business      Business   @relation(fields: [businessId], references: [id])
 
-  // NextAuth fields
-  accounts      Account[]
-  sessions     Session[]
 
   @@index([email])
   @@index([rol])
   @@index([estado])
 }
 
-// NextAuth models
-model Account {
-  id                Int     @id @default(autoincrement())
-  userId            Int
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@index([userId])
-}
-
-model Session {
-  id           Int      @id @default(autoincrement())
-  sessionToken String   @unique
-  userId       Int
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-}
 
 // Category Model
 model Category {
@@ -112,9 +109,11 @@ model Category {
   nombre      String    @unique
   descripcion String?
   createdAt   DateTime  @default(now())
-
+  businessId    Int
   // Relaciones
+  Business    Business  @relation(fields: [businessId], references: [id])
   products    Product[]
+  
 
   @@index([nombre])
 }
@@ -126,13 +125,15 @@ model Product {
   descripcion      String?
   codigoBarras     String?   @unique
   categoriaId      Int?
-  precioMinorista  Float
-  precioMayorista  Float
-  stockActual      Int       @default(0)
-  stockMinimo      Int       @default(0)
   imagenUrl        String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  stock            Int       @default(0)
+  stockMinimo      Int       @default(1)
+  branchId         Int
+  Branch           Branch    @relation(fields: [branchId], references: [id])
+  unitId           Int?
+  Unit             Unit?     @relation(fields: [unitId], references: [id])
 
   // Relaciones
   categoria        Category?         @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
@@ -140,7 +141,6 @@ model Product {
   quoteItems       QuoteItem[]
   purchaseItems    PurchaseItem[]
   supplierPrices   SupplierPrice[]
-  productStocks    ProductStock[]
 
   @@index([nombre])
   @@index([codigoBarras])
@@ -148,22 +148,22 @@ model Product {
 }
 
 // Customer Model
-model Customer {
+model Client {
   id                    Int       @id @default(autoincrement())
   nombre                String
   dni                   String?
   email                 String?   @unique
   telefono              String?
   direccion             String?
-  limiteCredito         Float     @default(0)
-  saldoCuentaCorriente  Float     @default(0)
   activo                Boolean   @default(true)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  businessId            Int
 
   // Relaciones
   sales                 Sale[]
   quotes                Quote[]
+  Business              Business  @relation(fields: [businessId], references: [id])
 
   @@index([email])
   @@index([dni])
@@ -175,17 +175,18 @@ model Sale {
   id            Int           @id @default(autoincrement())
   clienteId     Int?
   vendedorId    Int
-  vendedorNombre String
   total         Float
   estado        SaleStatus   @default(COMPLETADA)
   metodoPago    PaymentMethod
-  notas         String?
+  notas         String?       @db.Text()
   fecha         DateTime      @default(now())
   createdAt     DateTime      @default(now())
+  branchId        Int
 
   // Relaciones
-  cliente       Customer?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
-  vendedor       User         @relation(fields: [vendedorId], references: [id])
+  Branch        Branch    @relation(fields: [branchId], references: [id])
+  cliente       Client?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  vendedor      User         @relation(fields: [vendedorId], references: [id])
   items         SaleItem[]
 
   @@index([fecha])
@@ -199,15 +200,18 @@ model SaleItem {
   id            Int       @id @default(autoincrement())
   saleId        Int
   productoId    Int
-  productoNombre String
   cantidad      Int
   precioUnitario Float
+  porcentajeDescuento Float @default(0)
+  porcentajeGanancia Float 
+  ganancia_neta Float
+  taxId         Int?
   subtotal      Float
 
   // Relaciones
   sale          Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
   producto      Product   @relation(fields: [productoId], references: [id])
-
+  tax           Tax?      @relation(fields: [taxId], references: [id])
   @@index([saleId])
   @@index([productoId])
 }
@@ -217,7 +221,6 @@ model Quote {
   id                  Int         @id @default(autoincrement())
   clienteId           Int
   vendedorId          Int
-  vendedorNombre      String
   total               Float
   estado              QuoteStatus @default(PENDIENTE)
   validezDias         Int         @default(15)
@@ -227,7 +230,7 @@ model Quote {
   createdAt           DateTime    @default(now())
 
   // Relaciones
-  cliente             Customer    @relation(fields: [clienteId], references: [id])
+  cliente             Client    @relation(fields: [clienteId], references: [id])
   vendedor            User        @relation(fields: [vendedorId], references: [id])
   items               QuoteItem[]
 
@@ -242,7 +245,6 @@ model QuoteItem {
   id            Int       @id @default(autoincrement())
   quoteId       Int
   productoId    Int
-  productoNombre String
   cantidad      Int
   precioUnitario Float
   subtotal      Float
@@ -253,24 +255,6 @@ model QuoteItem {
 
   @@index([quoteId])
   @@index([productoId])
-}
-
-// Warehouse Model
-model Warehouse {
-  id        Int       @id @default(autoincrement())
-  nombre    String    @unique
-  direccion String?
-  encargado String?
-  telefono  String?
-  activo    Boolean   @default(true)
-  createdAt DateTime  @default(now())
-
-  // Relaciones
-  purchases     Purchase[]
-  productStocks ProductStock[]
-
-  @@index([nombre])
-  @@index([activo])
 }
 
 // Supplier Model
@@ -298,9 +282,7 @@ model Supplier {
 model SupplierPrice {
   id              Int       @id @default(autoincrement())
   productoId      Int
-  productoNombre  String
   proveedorId     Int
-  proveedorNombre String
   precio          Float
   codigoProveedor String?
   fechaActualizacion DateTime @default(now()) @updatedAt
@@ -319,25 +301,21 @@ model SupplierPrice {
 model Purchase {
   id            Int             @id @default(autoincrement())
   proveedorId   Int
-  proveedorNombre String
-  depositoId    Int
-  depositoNombre String
   total         Float
   estado        PurchaseStatus  @default(PENDIENTE)
   numeroFactura String?
   notas         String?
-  recibidaPor   String?
   fechaRecepcion DateTime?
   fecha         DateTime        @default(now())
   createdAt     DateTime        @default(now())
+  branchId      Int
 
   // Relaciones
   proveedor     Supplier        @relation(fields: [proveedorId], references: [id])
-  deposito      Warehouse        @relation(fields: [depositoId], references: [id])
+  Branch        Branch          @relation(fields: [branchId], references: [id])
   items         PurchaseItem[]
 
   @@index([proveedorId])
-  @@index([depositoId])
   @@index([fecha])
   @@index([estado])
 }
@@ -360,38 +338,23 @@ model PurchaseItem {
   @@index([productoId])
 }
 
-// ProductStock Model (Stock por depósito)
-model ProductStock {
-  id              Int       @id @default(autoincrement())
-  productoId      Int
-  depositoId      Int
-  cantidad         Int       @default(0)
-  ubicacionInterna String?
-
-  // Relaciones
-  producto        Product   @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  deposito        Warehouse @relation(fields: [depositoId], references: [id], onDelete: Cascade)
-
-  @@unique([productoId, depositoId])
-  @@index([productoId])
-  @@index([depositoId])
+model Tax {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  porcentaje  Float?
+  fix_amount  Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  businessId  Int
+  Business    Business  @relation(fields: [businessId], references: [id])
+  saleItems   SaleItem[]
 }
 
-// AuditLog Model
-model AuditLog {
-  id            Int       @id @default(autoincrement())
-  usuarioId     Int
-  usuarioNombre String
-  accion        String
-  modulo        String
-  detalles      String?
-  timestamp     DateTime  @default(now())
-
-  // Relaciones
-  usuario       User      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  @@index([timestamp])
-  @@index([usuarioId])
-  @@index([modulo])
+model Unit {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  abreviatura String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
 }
-

@@ -38,7 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Verificar contraseña
         const isValid = await verifyPassword(
           credentials.password as string,
-          user.password
+          user.password,
         );
 
         if (!isValid) {
@@ -50,23 +50,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { id: user.id },
           data: { lastLogin: new Date() },
         });
-
-        // Log de auditoría
-        await prisma.auditLog.create({
-          data: {
-            usuarioId: user.id,
-            usuarioNombre: user.name,
-            accion: "login",
-            modulo: "auth",
-            detalles: `Login exitoso desde ${user.email}`,
-          },
-        });
-
+const firtsBranchBusiness = await prisma.branch.findFirst({
+  where: {
+    businessId: user.businessId,
+  },
+});
         return {
           id: user.id.toString(),
           email: user.email,
           name: user.name,
           rol: user.rol,
+          businessId: user.businessId,
+          branchId: firtsBranchBusiness?.id ?? 0,
         };
       },
     }),
@@ -77,6 +72,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.rol = user.rol;
+        token.businessId = user.businessId;
       }
       return token;
     },
@@ -84,6 +80,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.rol = token.rol as UserRole;
+        session.user.businessId = token.businessId as number;
       }
       return session;
     },
@@ -95,4 +92,3 @@ export const POST = handlers.POST;
 
 // Especificar Node.js runtime para soportar bcryptjs
 export const runtime = "nodejs";
-
