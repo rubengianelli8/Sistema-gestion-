@@ -2,11 +2,10 @@ import { z } from "zod";
 
 export const customerCreateSchema = z.object({
   nombre: z.string().min(1, "El nombre es requerido"),
-  dni: z.string().optional(),
+  dni: z.string().min(1, "El DNI es requerido"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
-  telefono: z.string().optional(),
-  direccion: z.string().optional(),
-  limiteCredito: z.number().min(0, "El límite de crédito debe ser mayor o igual a 0").default(0),
+  telefono: z.string().min(1, "El teléfono es requerido"),
+  direccion: z.string().min(1, "La dirección es requerida"),
 });
 
 export const customerUpdateSchema = customerCreateSchema.partial();

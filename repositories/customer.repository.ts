@@ -2,11 +2,10 @@ import prisma from "@/lib/prisma";
 
 export interface CreateCustomerDto {
   nombre: string;
-  dni?: string;
+  dni: string;
   email?: string;
-  telefono?: string;
-  direccion?: string;
-  limiteCredito?: number;
+  telefono: string;
+  direccion: string;
 }
 
 export interface UpdateCustomerDto {
@@ -15,7 +14,6 @@ export interface UpdateCustomerDto {
   email?: string;
   telefono?: string;
   direccion?: string;
-  limiteCredito?: number;
   activo?: boolean;
 }
 

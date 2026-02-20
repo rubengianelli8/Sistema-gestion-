@@ -14,11 +14,10 @@ interface CustomerFormProps {
   customer?: {
     id: number;
     nombre: string;
-    dni?: string | null;
+    dni: string;
     email?: string | null;
-    telefono?: string | null;
-    direccion?: string | null;
-    limiteCredito: number;
+    telefono: string;
+    direccion: string;
   } | null;
   onSuccess: () => void;
 }
@@ -32,7 +31,6 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
     email: "",
     telefono: "",
     direccion: "",
-    limiteCredito: "",
   });
 
   useEffect(() => {
@@ -43,7 +41,6 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
         email: customer.email || "",
         telefono: customer.telefono || "",
         direccion: customer.direccion || "",
-        limiteCredito: customer.limiteCredito.toString(),
       });
     } else {
       setFormData({
@@ -52,7 +49,6 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
         email: "",
         telefono: "",
         direccion: "",
-        limiteCredito: "0",
       });
     }
     setError(null);
@@ -70,7 +66,6 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
         email: formData.email || undefined,
         telefono: formData.telefono || undefined,
         direccion: formData.direccion || undefined,
-        limiteCredito: parseFloat(formData.limiteCredito) || 0,
       };
 
       if (customer) {
@@ -121,12 +116,13 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
           </div>
 
           <div>
-            <Label htmlFor="dni">DNI</Label>
+            <Label htmlFor="dni">DNI *</Label>
             <Input
               id="dni"
               value={formData.dni}
               onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
               placeholder="Documento Nacional de Identidad"
+              required
             />
           </div>
 
@@ -142,12 +138,13 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
           </div>
 
           <div>
-            <Label htmlFor="telefono">Teléfono</Label>
+            <Label htmlFor="telefono">Teléfono *</Label>
             <Input
               id="telefono"
               value={formData.telefono}
               onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
               placeholder="Número de teléfono"
+              required
             />
           </div>
 
@@ -158,19 +155,7 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
               value={formData.direccion}
               onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
               placeholder="Dirección completa"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="limiteCredito">Límite de Crédito</Label>
-            <Input
-              id="limiteCredito"
-              type="number"
-              step="0.01"
-              min="0"
-              value={formData.limiteCredito}
-              onChange={(e) => setFormData({ ...formData, limiteCredito: e.target.value })}
-              placeholder="0.00"
+              required
             />
           </div>
 
