@@ -5,8 +5,8 @@ import { requirePermission, Permission } from "@/lib/permissions";
 import { CustomersTable } from "@/components/customers/customers-table";
 
 export default async function ClientesPage() {
+  console.log("acaa")
   const session = await auth();
-  
   if (!session?.user) {
     redirect("/login");
   }
@@ -18,6 +18,7 @@ export default async function ClientesPage() {
   }
 
   const result = await getAllCustomersAction();
+  console.log(result)
 
   if (!result.success) {
     return (

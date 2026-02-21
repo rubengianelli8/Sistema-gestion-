@@ -7,18 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { createCustomerAction, updateCustomerAction } from "@/app/actions/customer.actions";
 import { CustomerCreateInput } from "@/lib/validations/customer.schema";
+import { Client } from "@prisma/client";
 
 interface CustomerFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  customer?: {
-    id: number;
-    nombre: string;
-    dni: string;
-    email?: string | null;
-    telefono: string;
-    direccion: string;
-  } | null;
+  customer?: Partial<Client> | null;
   onSuccess: () => void;
 }
 
@@ -36,7 +30,7 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
   useEffect(() => {
     if (customer) {
       setFormData({
-        nombre: customer.nombre,
+        nombre: customer.nombre!,
         dni: customer.dni || "",
         email: customer.email || "",
         telefono: customer.telefono || "",
@@ -62,14 +56,14 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
     try {
       const data: CustomerCreateInput = {
         nombre: formData.nombre,
-        dni: formData.dni || undefined,
+        dni: formData.dni!,
         email: formData.email || undefined,
-        telefono: formData.telefono || undefined,
-        direccion: formData.direccion || undefined,
+        telefono: formData.telefono ,
+        direccion: formData.direccion,
       };
 
       if (customer) {
-        const result = await updateCustomerAction(customer.id.toString(), data);
+        const result = await updateCustomerAction(customer.id!.toString(), data);
         if (!result.success) {
           setError(result.error || "Error al actualizar el cliente");
           return;
