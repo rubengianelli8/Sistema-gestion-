@@ -8,6 +8,7 @@ datasource db {
 
 // Enums
 enum UserRole {
+  SUPERADMIN
   ADMIN
   VENDEDOR
   ALMACENERO
@@ -88,13 +89,13 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   lastLogin     DateTime?
-  businessId    Int
+  businessId    Int?
 
 
   // Relaciones
   sales         Sale[]
   quotes        Quote[]
-  business      Business   @relation(fields: [businessId], references: [id])
+  business      Business?   @relation(fields: [businessId], references: [id])
 
 
   @@index([email])

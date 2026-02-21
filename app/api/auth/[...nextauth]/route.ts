@@ -50,18 +50,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { id: user.id },
           data: { lastLogin: new Date() },
         });
-const firtsBranchBusiness = await prisma.branch.findFirst({
-  where: {
-    businessId: user.businessId,
-  },
-});
+        const firtsBranchBusiness = user.businessId
+          ? await prisma.branch.findFirst({
+              where: {
+                businessId: user.businessId,
+              },
+            })
+          : null;
         return {
           id: user.id.toString(),
           email: user.email,
           name: user.name,
           rol: user.rol,
           businessId: user.businessId,
-          branchId: firtsBranchBusiness?.id ?? 0,
+          branchId: firtsBranchBusiness?.id || null,
         };
       },
     }),
@@ -73,6 +75,7 @@ const firtsBranchBusiness = await prisma.branch.findFirst({
         token.id = user.id;
         token.rol = user.rol;
         token.businessId = user.businessId;
+        token.branchId = user.branchId;
       }
       return token;
     },
@@ -80,7 +83,8 @@ const firtsBranchBusiness = await prisma.branch.findFirst({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.rol = token.rol as UserRole;
-        session.user.businessId = token.businessId as number;
+        session.user.businessId = token.businessId;
+        session.user.branchId = token.branchId;
       }
       return session;
     },
