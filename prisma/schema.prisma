@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 // Enums
@@ -179,7 +179,7 @@ model Sale {
   total         Float
   estado        SaleStatus   @default(COMPLETADA)
   metodoPago    PaymentMethod
-  notas         String?       @db.Text()
+  notas         String?       @db.Text
   fecha         DateTime      @default(now())
   createdAt     DateTime      @default(now())
   branchId        Int

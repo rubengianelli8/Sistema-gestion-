@@ -84,5 +84,5 @@ async function createSuperAdminUser() {
   }
 }
 // Ejecutar el script
-//createAdminUser();
-createSuperAdminUser();
+createAdminUser();
+//createSuperAdminUser();

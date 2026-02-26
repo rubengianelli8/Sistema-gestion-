@@ -1,11 +1,12 @@
 import prisma from "@/lib/prisma";
-import { UserRole, Prisma } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 
 export interface CreateUserDto {
   email: string;
   name: string;
   password: string;
   rol: UserRole;
+  businessId?: number | null;
 }
 
 export interface UpdateUserDto {
@@ -19,16 +20,14 @@ export interface UpdateUserDto {
 export class UserRepository {
   private prisma = prisma;
 
-  /**
-   * Create a new user
-   */
   async create(data: CreateUserDto) {
     return await this.prisma.user.create({
       data: {
         email: data.email,
         name: data.name,
-        password: data.password, // Should be hashed before calling
+        password: data.password,
         rol: data.rol,
+        ...(data.businessId != null && { businessId: data.businessId }),
       },
       select: {
         id: true,
@@ -36,6 +35,7 @@ export class UserRepository {
         name: true,
         rol: true,
         estado: true,
+        businessId: true,
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
@@ -43,17 +43,18 @@ export class UserRepository {
     });
   }
 
-  /**
-   * Find all users
-   */
-  async findAll() {
+  async findAll(businessId?: number) {
     return await this.prisma.user.findMany({
+      where: {
+        ...(businessId != null && { businessId }),
+      },
       select: {
         id: true,
         email: true,
         name: true,
         rol: true,
         estado: true,
+        businessId: true,
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
@@ -64,18 +65,16 @@ export class UserRepository {
     });
   }
 
-  /**
-   * Find user by ID
-   */
   async findById(id: string) {
     return await this.prisma.user.findUnique({
-      where: { id },
+      where: { id: parseInt(id, 10) },
       select: {
         id: true,
         email: true,
         name: true,
         rol: true,
         estado: true,
+        businessId: true,
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
@@ -83,25 +82,19 @@ export class UserRepository {
     });
   }
 
-  /**
-   * Find user by email
-   */
   async findByEmail(email: string) {
     return await this.prisma.user.findUnique({
       where: { email },
     });
   }
 
-  /**
-   * Update user
-   */
   async update(id: string, data: UpdateUserDto) {
     return await this.prisma.user.update({
-      where: { id },
+      where: { id: parseInt(id, 10) },
       data: {
         ...(data.email && { email: data.email }),
         ...(data.name && { name: data.name }),
-        ...(data.password && { password: data.password }), // Should be hashed before calling
+        ...(data.password && { password: data.password }),
         ...(data.rol && { rol: data.rol }),
         ...(data.estado !== undefined && { estado: data.estado }),
       },
@@ -111,6 +104,7 @@ export class UserRepository {
         name: true,
         rol: true,
         estado: true,
+        businessId: true,
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
@@ -118,12 +112,9 @@ export class UserRepository {
     });
   }
 
-  /**
-   * Delete (deactivate) user
-   */
   async delete(id: string) {
     return await this.prisma.user.update({
-      where: { id },
+      where: { id: parseInt(id, 10) },
       data: { estado: false },
       select: {
         id: true,
@@ -135,27 +126,20 @@ export class UserRepository {
     });
   }
 
-  /**
-   * Check if user exists
-   */
   async exists(id: string): Promise<boolean> {
     const count = await this.prisma.user.count({
-      where: { id },
+      where: { id: parseInt(id, 10) },
     });
     return count > 0;
   }
 
-  /**
-   * Check if email exists
-   */
   async emailExists(email: string, excludeId?: string): Promise<boolean> {
     const count = await this.prisma.user.count({
       where: {
         email,
-        ...(excludeId && { id: { not: excludeId } }),
+        ...(excludeId && { id: { not: parseInt(excludeId, 10) } }),
       },
     });
     return count > 0;
   }
 }
-

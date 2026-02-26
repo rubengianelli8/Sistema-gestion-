@@ -4,7 +4,6 @@ import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { userService } from "@/services";
 import { userCreateSchema, userUpdateSchema, type UserCreateInput, type UserUpdateInput } from "@/lib/validations/user.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
-import { UserRole } from "@prisma/client";
 
 export async function createUserAction(data: UserCreateInput) {
   try {
@@ -15,10 +14,12 @@ export async function createUserAction(data: UserCreateInput) {
 
     requirePermission(session.user.rol, Permission.USUARIOS_CREAR);
 
-    // Validate data
     const validatedData = userCreateSchema.parse(data);
 
-    const user = await userService.createUser(validatedData);
+    const user = await userService.createUser({
+      ...validatedData,
+      businessId: session.user.businessId ?? undefined,
+    });
 
     return {
       success: true,
@@ -42,7 +43,8 @@ export async function getAllUsersAction() {
 
     requirePermission(session.user.rol, Permission.USUARIOS_VER);
 
-    const users = await userService.getAllUsers();
+    const businessId = session.user.businessId ?? undefined;
+    const users = await userService.getAllUsers(businessId);
 
     return {
       success: true,
@@ -88,8 +90,12 @@ export async function updateUserAction(id: string, data: Partial<UserUpdateInput
 
     requirePermission(session.user.rol, Permission.USUARIOS_EDITAR);
 
-    // Validate data
-    const validatedData = userUpdateSchema.parse(data);
+    const cleanData = {
+      ...data,
+      password: data.password === "" ? undefined : data.password,
+    };
+
+    const validatedData = userUpdateSchema.parse(cleanData);
 
     const user = await userService.updateUser(id, validatedData, session.user.id);
 
@@ -129,4 +135,3 @@ export async function deleteUserAction(id: string) {
     };
   }
 }
-
