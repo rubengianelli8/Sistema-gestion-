@@ -6,8 +6,9 @@ import { CustomerForm } from "./customer-form";
 import { deleteCustomerAction } from "@/app/actions/customer.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Client } from "@prisma/client";
 
-interface Customer {
+/* interface Customer {
   id: number;
   nombre: string;
   dni: string;
@@ -15,17 +16,17 @@ interface Customer {
   telefono: string;
   direccion: string;
   activo: boolean;
-}
+} */
 
 interface CustomersTableProps {
-  customers: Customer[];
+  customers: Client[];
 }
 
 export function CustomersTable({ customers: initialCustomers }: CustomersTableProps) {
   const router = useRouter();
   const [customers, setCustomers] = useState(initialCustomers);
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Client | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const handleAdd = () => {
@@ -33,7 +34,7 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
     setFormOpen(true);
   };
 
-  const handleEdit = (customer: Customer) => {
+  const handleEdit = (customer: Client) => {
     setEditingCustomer(customer);
     setFormOpen(true);
   };

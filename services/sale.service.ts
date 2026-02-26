@@ -37,17 +37,7 @@ export class SaleService {
       });
     }
 
-    // Actualizar saldo de cuenta corriente si hay cliente
-    if (data.clienteId && data.metodoPago === "TRANSFERENCIA") {
-      await prisma.customer.update({
-        where: { id: data.clienteId },
-        data: {
-          saldoCuentaCorriente: {
-            increment: data.total,
-          },
-        },
-      });
-    }
+    // Eliminado porque saldoCuentaCorriente ya no existe
 
     // Log de auditoría
     await prisma.auditLog.create({

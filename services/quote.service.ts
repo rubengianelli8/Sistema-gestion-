@@ -6,7 +6,7 @@ export class QuoteService {
 
   async createQuote(data: CreateQuoteDto, currentUserId: number, currentUserName: string) {
     // Validar que el cliente existe
-    const cliente = await prisma.customer.findUnique({
+    const cliente = await prisma.client.findUnique({
       where: { id: data.clienteId },
     });
 
