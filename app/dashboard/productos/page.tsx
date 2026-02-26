@@ -4,9 +4,20 @@ import { redirect } from "next/navigation";
 import { requirePermission, Permission } from "@/lib/permissions";
 import { ProductsTable } from "@/components/products/products-table";
 
-export default async function ProductosPage() {
+const DEFAULT_PAGE_SIZE = 20;
+
+interface SearchParams {
+  page?: string;
+  pageSize?: string;
+}
+
+export default async function ProductosPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const session = await auth();
-  
+
   if (!session?.user) {
     redirect("/login");
   }
@@ -16,6 +27,9 @@ export default async function ProductosPage() {
   } catch {
     redirect("/dashboard");
   }
+
+  const page = Math.max(1, Number(searchParams.page) || 1);
+  const pageSize = Math.max(1, Number(searchParams.pageSize) || DEFAULT_PAGE_SIZE);
 
   const result = await getAllProductsAction();
 
@@ -28,11 +42,19 @@ export default async function ProductosPage() {
     );
   }
 
-  const products = result.data || [];
+  const allProducts = result.data || [];
+  const total = allProducts.length;
+  const start = (page - 1) * pageSize;
+  const products = allProducts.slice(start, start + pageSize);
 
   return (
     <div className="p-6">
-      <ProductsTable products={products as any} />
+      <ProductsTable
+        products={products as any}
+        page={page}
+        pageSize={pageSize}
+        total={total}
+      />
     </div>
   );
 }

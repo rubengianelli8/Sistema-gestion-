@@ -31,6 +31,29 @@ export async function createProductAction(data: ProductCreateInput) {
   }
 }
 
+export async function getProductByIdAction(id: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "No autorizado" };
+    }
+
+    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+
+    const product = await productService.getProductById(parseInt(id));
+    if (!product) {
+      return { success: false, error: "Producto no encontrado" };
+    }
+
+    return { success: true, data: product };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}
+
 export async function getAllProductsAction() {
   try {
     const session = await auth();

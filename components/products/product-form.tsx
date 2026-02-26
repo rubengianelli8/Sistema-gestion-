@@ -1,171 +1,156 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useForm, FormProvider } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { RhfInput } from "@/components/ui/rhf-input";
 import { createProductAction, updateProductAction } from "@/app/actions/product.actions";
-import { ProductCreateInput } from "@/lib/validations/product.schema";
+import {
+  productCreateYupSchema,
+  productUpdateYupSchema,
+  type ProductCreateFormValues,
+  type ProductUpdateFormValues,
+} from "@/lib/validations/product-form.schema";
+
+interface ProductData {
+  id: number;
+  nombre: string;
+  codigoBarras?: string | null;
+  precioMinorista: number;
+  precioMayorista: number;
+}
 
 interface ProductFormProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  product?: {
-    id: number;
-    nombre: string;
-    codigoBarras?: string | null;
-    precioMinorista: number;
-    precioMayorista: number;
-  } | null;
-  onSuccess: () => void;
+  product?: ProductData | null;
 }
 
-export function ProductForm({ open, onOpenChange, product, onSuccess }: ProductFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    nombre: "",
-    codigoBarras: "",
-    precioMinorista: "",
-    precioMayorista: "",
+export function ProductForm({ product }: ProductFormProps) {
+  const router = useRouter();
+  const isEdit = !!product;
+
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const methods = useForm<ProductCreateFormValues | ProductUpdateFormValues>({
+    resolver: yupResolver(isEdit ? productUpdateYupSchema : productCreateYupSchema) as never,
+    defaultValues: {
+      nombre: product?.nombre ?? "",
+      codigoBarras: product?.codigoBarras ?? "",
+      precioMinorista: product?.precioMinorista ?? (undefined as unknown as number),
+      precioMayorista: product?.precioMayorista ?? (undefined as unknown as number),
+    },
   });
 
-  useEffect(() => {
-    if (product) {
-      setFormData({
-        nombre: product.nombre,
-        codigoBarras: product.codigoBarras || "",
-        precioMinorista: product.precioMinorista.toString(),
-        precioMayorista: product.precioMayorista.toString(),
-      });
-    } else {
-      setFormData({
-        nombre: "",
-        codigoBarras: "",
-        precioMinorista: "",
-        precioMayorista: "",
-      });
-    }
-    setError(null);
-  }, [product, open]);
+  const {
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const onSubmit = handleSubmit(async (data) => {
+    setServerError(null);
 
-    try {
-      const data: ProductCreateInput = {
-        nombre: formData.nombre,
-        codigoBarras: formData.codigoBarras || undefined,
-        precioMinorista: parseFloat(formData.precioMinorista),
-        precioMayorista: parseFloat(formData.precioMayorista),
-        stockActual: 0,
-        stockMinimo: 0,
-      };
+    const payload = {
+      nombre: data.nombre,
+      codigoBarras: data.codigoBarras || undefined,
+      precioMinorista: data.precioMinorista,
+      precioMayorista: data.precioMayorista,
+      stockActual: 0,
+      stockMinimo: 0,
+    };
 
-      if (product) {
-        const result = await updateProductAction(product.id.toString(), data);
-        if (!result.success) {
-          setError(result.error || "Error al actualizar el producto");
-          return;
-        }
-      } else {
-        const result = await createProductAction(data);
-        if (!result.success) {
-          setError(result.error || "Error al crear el producto");
-          return;
-        }
+    if (isEdit) {
+      const result = await updateProductAction(product.id.toString(), payload);
+      if (!result.success) {
+        setServerError(result.error || "Error al actualizar el producto");
+        return;
       }
-
-      onSuccess();
-      onOpenChange(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
+    } else {
+      const result = await createProductAction(payload);
+      if (!result.success) {
+        setServerError(result.error || "Error al crear el producto");
+        return;
+      }
     }
-  };
+
+    router.push("/dashboard/productos");
+    router.refresh();
+  });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{product ? "Editar Producto" : "Agregar Producto"}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          
-          <div>
-            <Label htmlFor="nombre">Nombre *</Label>
-            <Input
-              id="nombre"
-              value={formData.nombre}
-              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-              required
+    <div className="max-w-lg">
+      <div className="mb-6 flex items-center gap-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.push("/dashboard/productos")}
+        >
+          ← Volver
+        </Button>
+        <h1 className="text-2xl font-bold">
+          {isEdit ? "Editar Producto" : "Nuevo Producto"}
+        </h1>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <FormProvider {...methods}>
+          <form onSubmit={onSubmit} className="space-y-4">
+            {serverError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {serverError}
+              </div>
+            )}
+
+            <RhfInput
+              name="nombre"
+              label="Nombre *"
               placeholder="Nombre del producto"
             />
-          </div>
 
-          <div>
-            <Label htmlFor="codigoBarras">Código de Barras</Label>
-            <Input
-              id="codigoBarras"
-              value={formData.codigoBarras}
-              onChange={(e) => setFormData({ ...formData, codigoBarras: e.target.value })}
+            <RhfInput
+              name="codigoBarras"
+              label="Código de Barras"
               placeholder="Código de barras (opcional)"
             />
-          </div>
 
-          <div>
-            <Label htmlFor="precioMinorista">Precio Minorista *</Label>
-            <Input
-              id="precioMinorista"
+            <RhfInput
+              name="precioMinorista"
+              label="Precio Minorista *"
               type="number"
               step="0.01"
               min="0"
-              value={formData.precioMinorista}
-              onChange={(e) => setFormData({ ...formData, precioMinorista: e.target.value })}
-              required
               placeholder="0.00"
             />
-          </div>
 
-          <div>
-            <Label htmlFor="precioMayorista">Precio Mayorista *</Label>
-            <Input
-              id="precioMayorista"
+            <RhfInput
+              name="precioMayorista"
+              label="Precio Mayorista *"
               type="number"
               step="0.01"
               min="0"
-              value={formData.precioMayorista}
-              onChange={(e) => setFormData({ ...formData, precioMayorista: e.target.value })}
-              required
               placeholder="0.00"
             />
-          </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Guardando..." : product ? "Actualizar" : "Crear"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="flex gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push("/dashboard/productos")}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
+                  ? "Guardando..."
+                  : isEdit
+                  ? "Actualizar Producto"
+                  : "Crear Producto"}
+              </Button>
+            </div>
+          </form>
+        </FormProvider>
+      </div>
+    </div>
   );
 }
-
