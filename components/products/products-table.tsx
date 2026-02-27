@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable, ColumnDef } from "@/components/ui/data-table";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteProductAction } from "@/app/actions/product.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -51,25 +52,34 @@ export function ProductsTable({
 }: ProductsTableProps) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este producto?")) {
-      return;
-    }
+  const handleDeleteRequest = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
 
-    setDeletingId(id);
+  const handleDeleteConfirm = async () => {
+    if (pendingDeleteId === null) return;
+
+    setDeleting(true);
     try {
-      const result = await deleteProductAction(id.toString());
+      const result = await deleteProductAction(pendingDeleteId.toString());
       if (result.success) {
-        setProducts(products.filter((p) => p.id !== id));
+        setProducts(products.filter((p) => p.id !== pendingDeleteId));
+        setConfirmOpen(false);
+        setPendingDeleteId(null);
       } else {
-        alert(result.error || "Error al eliminar el producto");
+        setConfirmOpen(false);
+        setPendingDeleteId(null);
       }
     } catch {
-      alert("Error al eliminar el producto");
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
     }
   };
 
@@ -85,8 +95,7 @@ export function ProductsTable({
       <Button
         variant="destructive"
         size="sm"
-        onClick={() => handleDelete(product.id)}
-        disabled={deletingId === product.id}
+        onClick={() => handleDeleteRequest(product.id)}
       >
         <Trash2 className="w-4 h-4" />
       </Button>
@@ -111,6 +120,16 @@ export function ProductsTable({
         page={page}
         pageSize={pageSize}
         total={total}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="¿Eliminar producto?"
+        description="Esta acción no se puede deshacer. El producto será eliminado permanentemente."
+        confirmLabel="Eliminar"
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
       />
     </>
   );
