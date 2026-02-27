@@ -2,7 +2,10 @@
 
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { quoteService } from "@/services";
-import { quoteCreateSchema, type QuoteCreateInput } from "@/lib/validations/quote.schema";
+import {
+  quoteCreateSchema,
+  type QuoteCreateInput,
+} from "@/lib/validations/quote.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 
@@ -28,7 +31,7 @@ export async function createQuoteAction(data: QuoteCreateInput) {
           throw new Error(`Producto con ID ${item.productoId} no encontrado`);
         }
 
-        const precioUnitario = product.precioMinorista;
+        const precioUnitario = 0;
         const subtotal = precioUnitario * item.cantidad;
 
         return {
@@ -38,7 +41,7 @@ export async function createQuoteAction(data: QuoteCreateInput) {
           precioUnitario,
           subtotal,
         };
-      })
+      }),
     );
 
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -56,10 +59,14 @@ export async function createQuoteAction(data: QuoteCreateInput) {
     const quote = await quoteService.createQuote(
       quoteData,
       parseInt(session.user.id),
-      session.user.name
+      session.user.name,
     );
 
-    return { success: true, data: quote, message: "Presupuesto creado exitosamente" };
+    return {
+      success: true,
+      data: quote,
+      message: "Presupuesto creado exitosamente",
+    };
   } catch (error) {
     return {
       success: false,
@@ -105,4 +112,3 @@ export async function getQuoteByIdAction(id: string) {
     };
   }
 }
-

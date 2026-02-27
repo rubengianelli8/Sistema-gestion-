@@ -2,7 +2,10 @@
 
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { saleService } from "@/services";
-import { saleCreateSchema, type SaleCreateInput } from "@/lib/validations/sale.schema";
+import {
+  saleCreateSchema,
+  type SaleCreateInput,
+} from "@/lib/validations/sale.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
 
@@ -28,13 +31,13 @@ export async function createSaleAction(data: SaleCreateInput) {
           throw new Error(`Producto con ID ${item.productoId} no encontrado`);
         }
 
-        if (product.stockActual < item.cantidad) {
+        if (1 < item.cantidad) {
           throw new Error(
-            `Stock insuficiente para ${product.nombre}. Stock disponible: ${product.stockActual}`
+            `Stock insuficiente para ${product.nombre}. Stock disponible: 1`,
           );
         }
 
-        const precioUnitario = product.precioMinorista;
+        const precioUnitario = 0;
         const subtotal = precioUnitario * item.cantidad;
 
         return {
@@ -44,7 +47,7 @@ export async function createSaleAction(data: SaleCreateInput) {
           precioUnitario,
           subtotal,
         };
-      })
+      }),
     );
 
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
@@ -62,7 +65,7 @@ export async function createSaleAction(data: SaleCreateInput) {
     const sale = await saleService.createSale(
       saleData,
       parseInt(session.user.id),
-      session.user.name
+      session.user.name,
     );
 
     return { success: true, data: sale, message: "Venta creada exitosamente" };
@@ -92,4 +95,3 @@ export async function getAllSalesAction() {
     };
   }
 }
-

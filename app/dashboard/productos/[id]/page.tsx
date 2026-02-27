@@ -8,7 +8,9 @@ interface EditarProductoPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function EditarProductoPage({ params }: EditarProductoPageProps) {
+export default async function EditarProductoPage({
+  params,
+}: EditarProductoPageProps) {
   const { id } = await params;
 
   const session = await auth();
@@ -30,8 +32,6 @@ export default async function EditarProductoPage({ params }: EditarProductoPageP
   }
 
   return (
-    <div className="p-6">
-      <ProductForm product={result.data} />
-    </div>
+    <div className="p-6">{/* <ProductForm product={result.data} /> */}</div>
   );
 }

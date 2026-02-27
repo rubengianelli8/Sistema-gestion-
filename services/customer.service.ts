@@ -1,11 +1,9 @@
 import { CustomerRepository, CreateCustomerDto, UpdateCustomerDto } from "@/repositories/customer.repository";
-import prisma from "@/lib/prisma";
 
 export class CustomerService {
   constructor(private readonly repository: CustomerRepository) {}
 
   async createCustomer(data: CreateCustomerDto, currentUserId: number, currentUserName: string) {
-    // Verificar si el email ya existe
     if (data.email) {
       const emailExists = await this.repository.findByEmail(data.email);
       if (emailExists) {
@@ -13,7 +11,6 @@ export class CustomerService {
       }
     }
 
-    // Verificar si el DNI ya existe
     if (data.dni) {
       const dniExists = await this.repository.findByDni(data.dni);
       if (dniExists) {
@@ -22,16 +19,6 @@ export class CustomerService {
     }
 
     const customer = await this.repository.create(data);
-
-    await prisma.auditLog.create({
-      data: {
-        usuarioId: currentUserId,
-        usuarioNombre: currentUserName,
-        accion: "crear",
-        modulo: "clientes",
-        detalles: `Cliente creado: ${customer.nombre}`,
-      },
-    });
 
     return customer;
   }
@@ -54,7 +41,6 @@ export class CustomerService {
       throw new Error("Cliente no encontrado");
     }
 
-    // Verificar si el email ya existe en otro cliente
     if (data.email) {
       const emailExists = await this.repository.findByEmail(data.email);
       if (emailExists && emailExists.id !== id) {
@@ -62,7 +48,6 @@ export class CustomerService {
       }
     }
 
-    // Verificar si el DNI ya existe en otro cliente
     if (data.dni) {
       const dniExists = await this.repository.findByDni(data.dni);
       if (dniExists && dniExists.id !== id) {
@@ -71,16 +56,6 @@ export class CustomerService {
     }
 
     const customer = await this.repository.update(id, data);
-
-    await prisma.auditLog.create({
-      data: {
-        usuarioId: currentUserId,
-        usuarioNombre: currentUserName,
-        accion: "actualizar",
-        modulo: "clientes",
-        detalles: `Cliente actualizado: ${id}`,
-      },
-    });
 
     return customer;
   }
@@ -93,17 +68,6 @@ export class CustomerService {
 
     await this.repository.delete(id);
 
-    await prisma.auditLog.create({
-      data: {
-        usuarioId: currentUserId,
-        usuarioNombre: currentUserName,
-        accion: "eliminar",
-        modulo: "clientes",
-        detalles: `Cliente eliminado (lógico): ${id}`,
-      },
-    });
-
     return { message: "Cliente eliminado exitosamente" };
   }
 }
-

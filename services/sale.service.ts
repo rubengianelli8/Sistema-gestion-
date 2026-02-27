@@ -5,7 +5,6 @@ export class SaleService {
   constructor(private readonly repository: SaleRepository) {}
 
   async createSale(data: CreateSaleDto, currentUserId: number, currentUserName: string) {
-    // Validar que todos los productos tengan stock suficiente
     for (const item of data.items) {
       const product = await prisma.product.findUnique({
         where: { id: item.productoId },
@@ -15,40 +14,25 @@ export class SaleService {
         throw new Error(`Producto con ID ${item.productoId} no encontrado`);
       }
 
-      if (product.stockActual < item.cantidad) {
+      if (product.stock < item.cantidad) {
         throw new Error(
-          `Stock insuficiente para ${product.nombre}. Stock disponible: ${product.stockActual}, solicitado: ${item.cantidad}`
+          `Stock insuficiente para ${product.nombre}. Stock disponible: ${product.stock}, solicitado: ${item.cantidad}`
         );
       }
     }
 
-    // Crear la venta
     const sale = await this.repository.create(data);
 
-    // Actualizar stock de productos
     for (const item of data.items) {
       await prisma.product.update({
         where: { id: item.productoId },
         data: {
-          stockActual: {
+          stock: {
             decrement: item.cantidad,
           },
         },
       });
     }
-
-    // Eliminado porque saldoCuentaCorriente ya no existe
-
-    // Log de auditoría
-    await prisma.auditLog.create({
-      data: {
-        usuarioId: currentUserId,
-        usuarioNombre: currentUserName,
-        accion: "crear",
-        modulo: "ventas",
-        detalles: `Venta creada: ${sale.id} - Total: $${data.total}`,
-      },
-    });
 
     return sale;
   }
@@ -65,4 +49,3 @@ export class SaleService {
     return sale;
   }
 }
-

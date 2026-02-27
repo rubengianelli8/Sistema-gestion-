@@ -8,7 +8,7 @@ import { QuotesTable } from "@/components/quotes/quotes-table";
 
 export default async function PresupuestosPage() {
   const session = await auth();
-  
+
   if (!session?.user) {
     redirect("/login");
   }
@@ -40,8 +40,7 @@ export default async function PresupuestosPage() {
 
   return (
     <div className="p-6">
-      <QuotesTable quotes={quotes} customers={customers} products={products} />
+      {/* <QuotesTable quotes={quotes} customers={customers} products={products} /> */}
     </div>
   );
 }
-

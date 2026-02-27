@@ -17,7 +17,7 @@ export async function createCategoryAction(data: CategoryCreateInput) {
     const validatedData = categoryCreateSchema.parse(data);
     const category = await categoryService.createCategory(
       validatedData,
-      session.user.id,
+      parseInt(session.user.id),
       session.user.name
     );
 
@@ -60,9 +60,9 @@ export async function updateCategoryAction(id: string, data: Partial<CategoryUpd
 
     const validatedData = categoryUpdateSchema.parse(data);
     const category = await categoryService.updateCategory(
-      id,
+      parseInt(id),
       validatedData,
-      session.user.id,
+      parseInt(session.user.id),
       session.user.name
     );
 
@@ -85,8 +85,8 @@ export async function deleteCategoryAction(id: string) {
     requirePermission(session.user.rol, Permission.PRODUCTOS_ELIMINAR);
 
     const result = await categoryService.deleteCategory(
-      id,
-      session.user.id,
+      parseInt(id),
+      parseInt(session.user.id),
       session.user.name
     );
 

@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 export interface CreateCategoryDto {
   nombre: string;
   descripcion?: string;
+  businessId?: number;
 }
 
 export interface UpdateCategoryDto {
@@ -14,7 +15,15 @@ export class CategoryRepository {
   private prisma = prisma;
 
   async create(data: CreateCategoryDto) {
-    return await this.prisma.category.create({ data });
+    const { businessId, ...rest } = data;
+    return await this.prisma.category.create({
+      data: {
+        ...rest,
+        Business: {
+          connect: { id: businessId ?? 1 },
+        },
+      },
+    });
   }
 
   async findAll() {
@@ -23,7 +32,7 @@ export class CategoryRepository {
     });
   }
 
-  async findById(id: string) {
+  async findById(id: number) {
     return await this.prisma.category.findUnique({ where: { id } });
   }
 
@@ -31,23 +40,23 @@ export class CategoryRepository {
     return await this.prisma.category.findUnique({ where: { nombre } });
   }
 
-  async update(id: string, data: UpdateCategoryDto) {
+  async update(id: number, data: UpdateCategoryDto) {
     return await this.prisma.category.update({
       where: { id },
       data,
     });
   }
 
-  async delete(id: string) {
+  async delete(id: number) {
     return await this.prisma.category.delete({ where: { id } });
   }
 
-  async exists(id: string): Promise<boolean> {
+  async exists(id: number): Promise<boolean> {
     const count = await this.prisma.category.count({ where: { id } });
     return count > 0;
   }
 
-  async nameExists(nombre: string, excludeId?: string): Promise<boolean> {
+  async nameExists(nombre: string, excludeId?: number): Promise<boolean> {
     const count = await this.prisma.category.count({
       where: {
         nombre,
@@ -57,4 +66,3 @@ export class CategoryRepository {
     return count > 0;
   }
 }
-

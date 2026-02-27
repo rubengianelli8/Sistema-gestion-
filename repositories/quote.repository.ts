@@ -3,13 +3,11 @@ import prisma from "@/lib/prisma";
 export interface CreateQuoteDto {
   clienteId: number;
   vendedorId: number;
-  vendedorNombre: string;
   total: number;
   validezDias: number;
   notas?: string;
   items: {
     productoId: number;
-    productoNombre: string;
     cantidad: number;
     precioUnitario: number;
     subtotal: number;
@@ -24,7 +22,6 @@ export class QuoteRepository {
       data: {
         clienteId: data.clienteId,
         vendedorId: data.vendedorId,
-        vendedorNombre: data.vendedorNombre,
         total: data.total,
         validezDias: data.validezDias,
         notas: data.notas,
@@ -72,4 +69,3 @@ export class QuoteRepository {
     });
   }
 }
-

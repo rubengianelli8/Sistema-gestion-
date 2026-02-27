@@ -11,12 +11,10 @@ export interface QuotePDFData {
     telefono?: string | null;
     direccion?: string | null;
   };
-  vendedorNombre: string;
   total: number;
   validezDias: number;
   notas?: string | null;
   items: Array<{
-    productoNombre: string;
     cantidad: number;
     precioUnitario: number;
     subtotal: number;
@@ -94,7 +92,7 @@ export function generateQuotePDF(quote: QuotePDFData) {
     startY: yPosition,
     head: [["Producto", "Cantidad", "Precio Unit.", "Subtotal"]],
     body: quote.items.map((item) => [
-      item.productoNombre,
+      "NOMBRE DE PRODUCTO HARDCODEADO",
       item.cantidad.toString(),
       `$${item.precioUnitario.toFixed(2)}`,
       `$${item.subtotal.toFixed(2)}`,
@@ -109,22 +107,16 @@ export function generateQuotePDF(quote: QuotePDFData) {
   // Total
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text(
-    `Total: $${quote.total.toFixed(2)}`,
-    pageWidth - 20,
-    finalY + 10,
-    { align: "right" },
-  );
+  doc.text(`Total: $${quote.total.toFixed(2)}`, pageWidth - 20, finalY + 10, {
+    align: "right",
+  });
 
   // Validez
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text(
-    `Validez: ${quote.validezDias} días`,
-    pageWidth - 20,
-    finalY + 20,
-    { align: "right" },
-  );
+  doc.text(`Validez: ${quote.validezDias} días`, pageWidth - 20, finalY + 20, {
+    align: "right",
+  });
 
   // Fecha de vencimiento
   const fechaVencimiento = new Date(fecha);
@@ -151,7 +143,7 @@ export function generateQuotePDF(quote: QuotePDFData) {
   // Vendedor
   doc.setFontSize(9);
   doc.text(
-    `Vendedor: ${quote.vendedorNombre}`,
+    `Vendedor: NOMBRE DE VENDEDOR HARDCODEADO`,
     pageWidth / 2,
     pageHeight - 20,
     { align: "center" },
@@ -160,4 +152,3 @@ export function generateQuotePDF(quote: QuotePDFData) {
   // Descargar PDF
   doc.save(`presupuesto-${quote.id}.pdf`);
 }
-

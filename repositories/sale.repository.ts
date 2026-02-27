@@ -3,16 +3,21 @@ import prisma from "@/lib/prisma";
 export interface CreateSaleDto {
   clienteId?: number;
   vendedorId: number;
-  vendedorNombre: string;
+  vendedorNombre?: string;
   total: number;
   metodoPago: string;
   notas?: string;
+  branchId?: number;
   items: {
     productoId: number;
-    productoNombre: string;
+    productoNombre?: string;
     cantidad: number;
     precioUnitario: number;
     subtotal: number;
+    porcentajeGanancia?: number;
+    ganancia_neta?: number;
+    porcentajeDescuento?: number;
+    taxId?: number;
   }[];
 }
 
@@ -24,12 +29,21 @@ export class SaleRepository {
       data: {
         clienteId: data.clienteId,
         vendedorId: data.vendedorId,
-        vendedorNombre: data.vendedorNombre,
         total: data.total,
         metodoPago: data.metodoPago as any,
         notas: data.notas,
+        branchId: data.branchId ?? 1,
         items: {
-          create: data.items,
+          create: data.items.map((item) => ({
+            productoId: item.productoId,
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            subtotal: item.subtotal,
+            porcentajeGanancia: item.porcentajeGanancia ?? 0,
+            ganancia_neta: item.ganancia_neta ?? 0,
+            porcentajeDescuento: item.porcentajeDescuento ?? 0,
+            ...(item.taxId !== undefined && { taxId: item.taxId }),
+          })),
         },
       },
       include: {
@@ -71,4 +85,3 @@ export class SaleRepository {
     });
   }
 }
-

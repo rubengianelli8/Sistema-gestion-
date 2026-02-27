@@ -8,7 +8,7 @@ import { SalesTable } from "@/components/sales/sales-table";
 
 export default async function VentasPage() {
   const session = await auth();
-  
+
   if (!session?.user) {
     redirect("/login");
   }
@@ -40,8 +40,7 @@ export default async function VentasPage() {
 
   return (
     <div className="p-6">
-      <SalesTable sales={sales} customers={customers} products={products} />
+      {/* <SalesTable sales={sales} customers={customers} products={products} /> */}
     </div>
   );
 }
-

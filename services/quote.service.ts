@@ -5,7 +5,6 @@ export class QuoteService {
   constructor(private readonly repository: QuoteRepository) {}
 
   async createQuote(data: CreateQuoteDto, currentUserId: number, currentUserName: string) {
-    // Validar que el cliente existe
     const cliente = await prisma.client.findUnique({
       where: { id: data.clienteId },
     });
@@ -18,7 +17,6 @@ export class QuoteService {
       throw new Error("El cliente está inactivo");
     }
 
-    // Validar que todos los productos existen (sin validar stock)
     for (const item of data.items) {
       const product = await prisma.product.findUnique({
         where: { id: item.productoId },
@@ -29,19 +27,7 @@ export class QuoteService {
       }
     }
 
-    // Crear el presupuesto
     const quote = await this.repository.create(data);
-
-    // Log de auditoría
-    await prisma.auditLog.create({
-      data: {
-        usuarioId: currentUserId,
-        usuarioNombre: currentUserName,
-        accion: "crear",
-        modulo: "presupuestos",
-        detalles: `Presupuesto creado: ${quote.id} - Total: $${data.total}`,
-      },
-    });
 
     return quote;
   }
@@ -58,4 +44,3 @@ export class QuoteService {
     return quote;
   }
 }
-

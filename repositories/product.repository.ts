@@ -5,11 +5,13 @@ export interface CreateProductDto {
   descripcion?: string;
   codigoBarras?: string;
   categoriaId?: number;
-  precioMinorista: number;
-  precioMayorista: number;
-  stockActual: number;
-  stockMinimo: number;
+  precioMinorista?: number;
+  precioMayorista?: number;
+  stock?: number;
+  stockActual?: number;
+  stockMinimo?: number;
   imagenUrl?: string;
+  branchId?: number;
 }
 
 export interface UpdateProductDto {
@@ -19,7 +21,7 @@ export interface UpdateProductDto {
   categoriaId?: number;
   precioMinorista?: number;
   precioMayorista?: number;
-  stockActual?: number;
+  stock?: number;
   stockMinimo?: number;
   imagenUrl?: string;
 }
@@ -28,7 +30,15 @@ export class ProductRepository {
   private prisma = prisma;
 
   async create(data: CreateProductDto) {
-    return await this.prisma.product.create({ data });
+    const { categoriaId, stockActual, branchId, ...rest } = data;
+    return await this.prisma.product.create({
+      data: {
+        ...rest,
+        ...(categoriaId !== undefined && { categoriaId }),
+        ...(stockActual !== undefined && { stock: stockActual }),
+        branchId: branchId ?? 1,
+      },
+    });
   }
 
   async findAll() {
@@ -55,8 +65,8 @@ export class ProductRepository {
     return await this.prisma.product.findMany({
       where: {
         OR: [
-          { nombre: { contains: query, mode: "insensitive" } },
-          { codigoBarras: { contains: query, mode: "insensitive" } },
+          { nombre: { contains: query } },
+          { codigoBarras: { contains: query } },
         ],
       },
       include: { categoria: true },
@@ -92,4 +102,3 @@ export class ProductRepository {
     return count > 0;
   }
 }
-
