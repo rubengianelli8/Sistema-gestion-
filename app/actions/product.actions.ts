@@ -2,15 +2,28 @@
 
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { productService } from "@/services";
-import {
-  productCreateSchema,
-  productUpdateSchema,
-  type ProductCreateInput,
-  type ProductUpdateInput,
-} from "@/lib/validations/product.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
+import prisma from "@/lib/prisma";
 
-export async function createProductAction(data: ProductCreateInput) {
+interface SupplierPriceInput {
+  proveedorId: number;
+  precio: number;
+  codigoProveedor?: string;
+}
+
+interface ProductInput {
+  nombre: string;
+  descripcion?: string;
+  codigoBarras?: string;
+  imagenUrl?: string;
+  categoriaId?: number | null;
+  unitId?: number | null;
+  stock?: number;
+  stockMinimo?: number;
+  supplierPrices?: SupplierPriceInput[];
+}
+
+export async function createProductAction(data: ProductInput) {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -19,12 +32,53 @@ export async function createProductAction(data: ProductCreateInput) {
 
     requirePermission(session.user.rol, Permission.PRODUCTOS_CREAR);
 
-    const validatedData = productCreateSchema.parse(data);
+    const branchId = session.user.branchId;
+    if (!branchId) {
+      return { success: false, error: "No se encontró la sucursal del usuario" };
+    }
+
+    const { supplierPrices, ...productData } = data;
+
     const product = await productService.createProduct(
-      validatedData,
+      {
+        nombre: productData.nombre,
+        descripcion: productData.descripcion,
+        codigoBarras: productData.codigoBarras,
+        imagenUrl: productData.imagenUrl,
+        categoriaId: productData.categoriaId ?? undefined,
+        unitId: productData.unitId ?? undefined,
+        stock: productData.stock ?? 0,
+        stockMinimo: productData.stockMinimo ?? 0,
+        branchId,
+      },
       parseInt(session.user.id),
       session.user.name,
     );
+
+    if (supplierPrices && supplierPrices.length > 0) {
+      await Promise.all(
+        supplierPrices.map((sp) =>
+          prisma.supplierPrice.upsert({
+            where: {
+              productoId_proveedorId: {
+                productoId: product.id,
+                proveedorId: sp.proveedorId,
+              },
+            },
+            update: {
+              precio: sp.precio,
+              codigoProveedor: sp.codigoProveedor,
+            },
+            create: {
+              productoId: product.id,
+              proveedorId: sp.proveedorId,
+              precio: sp.precio,
+              codigoProveedor: sp.codigoProveedor,
+            },
+          }),
+        ),
+      );
+    }
 
     return {
       success: true,
@@ -48,7 +102,17 @@ export async function getProductByIdAction(id: string) {
 
     requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
 
-    const product = await productService.getProductById(parseInt(id));
+    const product = await prisma.product.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        categoria: true,
+        Unit: true,
+        supplierPrices: {
+          include: { proveedor: true },
+        },
+      },
+    });
+
     if (!product) {
       return { success: false, error: "Producto no encontrado" };
     }
@@ -100,10 +164,7 @@ export async function searchProductsAction(query: string) {
   }
 }
 
-export async function updateProductAction(
-  id: string,
-  data: Partial<ProductUpdateInput>,
-) {
+export async function updateProductAction(id: string, data: Partial<ProductInput>) {
   try {
     const session = await auth();
     if (!session?.user) {
@@ -112,13 +173,60 @@ export async function updateProductAction(
 
     requirePermission(session.user.rol, Permission.PRODUCTOS_EDITAR);
 
-    const validatedData = productUpdateSchema.parse(data);
+    const { supplierPrices, ...productData } = data;
+
     const product = await productService.updateProduct(
       parseInt(id),
-      validatedData,
+      {
+        nombre: productData.nombre,
+        descripcion: productData.descripcion,
+        codigoBarras: productData.codigoBarras,
+        imagenUrl: productData.imagenUrl,
+        categoriaId: productData.categoriaId ?? undefined,
+        unitId: productData.unitId ?? undefined,
+        stock: productData.stock,
+        stockMinimo: productData.stockMinimo,
+      },
       parseInt(session.user.id),
       session.user.name,
     );
+
+    if (supplierPrices !== undefined) {
+      // Eliminar precios que ya no están en la lista
+      const incomingProveedorIds = supplierPrices.map((sp) => sp.proveedorId);
+      await prisma.supplierPrice.deleteMany({
+        where: {
+          productoId: parseInt(id),
+          proveedorId: { notIn: incomingProveedorIds },
+        },
+      });
+
+      // Upsert los precios actuales
+      if (supplierPrices.length > 0) {
+        await Promise.all(
+          supplierPrices.map((sp) =>
+            prisma.supplierPrice.upsert({
+              where: {
+                productoId_proveedorId: {
+                  productoId: parseInt(id),
+                  proveedorId: sp.proveedorId,
+                },
+              },
+              update: {
+                precio: sp.precio,
+                codigoProveedor: sp.codigoProveedor,
+              },
+              create: {
+                productoId: parseInt(id),
+                proveedorId: sp.proveedorId,
+                precio: sp.precio,
+                codigoProveedor: sp.codigoProveedor,
+              },
+            }),
+          ),
+        );
+      }
+    }
 
     return {
       success: true,

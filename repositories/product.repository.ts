@@ -5,8 +5,7 @@ export interface CreateProductDto {
   descripcion?: string;
   codigoBarras?: string;
   categoriaId?: number;
-  precioMinorista?: number;
-  precioMayorista?: number;
+  unitId?: number;
   stock?: number;
   stockActual?: number;
   stockMinimo?: number;
@@ -19,8 +18,7 @@ export interface UpdateProductDto {
   descripcion?: string;
   codigoBarras?: string;
   categoriaId?: number;
-  precioMinorista?: number;
-  precioMayorista?: number;
+  unitId?: number;
   stock?: number;
   stockMinimo?: number;
   imagenUrl?: string;
@@ -30,11 +28,12 @@ export class ProductRepository {
   private prisma = prisma;
 
   async create(data: CreateProductDto) {
-    const { categoriaId, stockActual, branchId, ...rest } = data;
+    const { categoriaId, unitId, stockActual, branchId, ...rest } = data;
     return await this.prisma.product.create({
       data: {
         ...rest,
         ...(categoriaId !== undefined && { categoriaId }),
+        ...(unitId !== undefined && { unitId }),
         ...(stockActual !== undefined && { stock: stockActual }),
         branchId: branchId ?? 1,
       },
