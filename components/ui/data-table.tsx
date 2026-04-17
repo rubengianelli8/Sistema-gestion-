@@ -6,6 +6,8 @@ import { Pagination } from "@/components/ui/pagination";
 export interface ColumnDef<T> {
   key: string;
   header: string;
+  /** Si está definido, reemplaza el texto de `header` en el encabezado de la columna */
+  headerRender?: () => React.ReactNode;
   render?: (row: T) => React.ReactNode;
 }
 
@@ -41,7 +43,7 @@ export function DataTable<T extends { id: number | string }>({
                   key={col.key}
                   className="border border-gray-300 px-4 py-2 text-left"
                 >
-                  {col.header}
+                  {col.headerRender ? col.headerRender() : col.header}
                 </th>
               ))}
               {actions && (

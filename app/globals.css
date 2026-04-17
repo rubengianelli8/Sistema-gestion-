@@ -125,3 +125,29 @@
   }
 }
 
+@media print {
+  @page {
+    margin: 10mm;
+  }
+
+  /* Solo se imprime el contenido marcado como etiqueta (puede estar anidado en el layout) */
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .barcode-cell {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+

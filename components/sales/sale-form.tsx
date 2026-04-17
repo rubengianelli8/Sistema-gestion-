@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +14,9 @@ import {
 import { createSaleAction } from "@/app/actions/sale.actions";
 import { toast } from "sonner";
 import { PaymentMethod } from "@prisma/client";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Camera } from "lucide-react";
 import { ImagePreview } from "@/components/ui/image-preview";
+import { BarcodeScannerDialog } from "@/components/ui/barcode-scanner-dialog";
 
 interface SaleFormProps {
   open: boolean;
@@ -25,6 +26,7 @@ interface SaleFormProps {
     id: number;
     nombre: string;
     imagenUrl?: string | null;
+    codigoBarras?: string | null;
     precioMinorista: number;
     stockActual: number;
   }>;
@@ -57,6 +59,8 @@ export function SaleForm({
   const [items, setItems] = useState<SaleItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState<string>("");
   const [selectedQuantity, setSelectedQuantity] = useState<string>("1");
+  const [scanValue, setScanValue] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -66,9 +70,67 @@ export function SaleForm({
       setItems([]);
       setSelectedProductId("");
       setSelectedQuantity("1");
+      setScanValue("");
+      setScannerOpen(false);
       setError(null);
     }
   }, [open]);
+
+  const addByBarcode = useCallback(
+    (raw: string) => {
+      const code = raw.trim();
+      if (!code) return;
+      const product = products.find((p) => (p.codigoBarras ?? "") === code);
+      if (!product) {
+        toast.error(`No se encontró un producto con código ${code}`);
+        return;
+      }
+      if (product.stockActual <= 0) {
+        toast.error(`Sin stock: ${product.nombre}`);
+        return;
+      }
+      setItems((prev) => {
+        const existing = prev.find((i) => i.productoId === product.id);
+        const nextQty = (existing?.cantidad ?? 0) + 1;
+        if (product.stockActual < nextQty) {
+          toast.error(`Stock insuficiente. Disponible: ${product.stockActual}`);
+          return prev;
+        }
+        if (existing) {
+          return prev.map((i) =>
+            i.productoId === product.id
+              ? {
+                  ...i,
+                  cantidad: nextQty,
+                  subtotal: i.precioUnitario * nextQty,
+                }
+              : i,
+          );
+        }
+        return [
+          ...prev,
+          {
+            productoId: product.id,
+            cantidad: 1,
+            productoNombre: product.nombre,
+            imagenUrl: product.imagenUrl,
+            precioUnitario: product.precioMinorista,
+            subtotal: product.precioMinorista,
+          },
+        ];
+      });
+      toast.success(`Agregado: ${product.nombre}`);
+      setError(null);
+    },
+    [products],
+  );
+
+  const handleScannerDetected = useCallback(
+    (code: string) => {
+      addByBarcode(code);
+    },
+    [addByBarcode],
+  );
 
   const handleAddProduct = () => {
     if (!selectedProductId) {
@@ -216,6 +278,7 @@ export function SaleForm({
   const availableProducts = products.filter((p) => p.stockActual > 0);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange} maxWidth="max-w-6xl">
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -276,6 +339,35 @@ export function SaleForm({
 
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-2">Productos</h3>
+            <div className="space-y-2 mb-4">
+              <Label htmlFor="scanBarcode">Escanear código de barras</Label>
+              <div className="flex flex-wrap gap-2 items-end">
+                <Input
+                  id="scanBarcode"
+                  value={scanValue}
+                  onChange={(e) => setScanValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addByBarcode(scanValue);
+                      setScanValue("");
+                    }
+                  }}
+                  placeholder="Lector USB o pegar y Enter"
+                  autoComplete="off"
+                  autoFocus
+                  className="flex-1 min-w-[200px]"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setScannerOpen(true)}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Escanear con cámara
+                </Button>
+              </div>
+            </div>
             <div className="space-y-3 mb-4">
               <div className="flex items-center gap-3">
                 <div className="shrink-0">
@@ -396,5 +488,12 @@ export function SaleForm({
         </form>
       </DialogContent>
     </Dialog>
+
+    <BarcodeScannerDialog
+      open={scannerOpen}
+      onOpenChange={setScannerOpen}
+      onDetected={handleScannerDetected}
+    />
+    </>
   );
 }

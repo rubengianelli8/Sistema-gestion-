@@ -61,6 +61,7 @@ export class SaleRepository {
     return await this.prisma.sale.findMany({
       include: {
         cliente: true,
+        vendedor: { select: { name: true } },
         items: {
           include: {
             producto: true,

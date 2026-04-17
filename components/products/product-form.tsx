@@ -20,6 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { Barcode } from "@/components/ui/barcode";
 import { toast } from "sonner";
 
 interface Category {
@@ -127,6 +128,7 @@ export function ProductForm({
     name: "supplierPrices",
   });
   const imageUrl = watch("imagenUrl");
+  const codigoBarrasWatch = watch("codigoBarras");
 
   const onSubmit = handleSubmit(async (data) => {
     setServerError(null);
@@ -270,6 +272,14 @@ export function ProductForm({
                     label="Código de barras"
                     placeholder="Ej: 7790040123456"
                   />
+                  {codigoBarrasWatch?.trim() ? (
+                    <div className="space-y-2">
+                      <Label>Vista previa</Label>
+                      <div className="rounded-md border border-border bg-muted/30 p-3 inline-block">
+                        <Barcode value={codigoBarrasWatch.trim()} />
+                      </div>
+                    </div>
+                  ) : null}
                 </CardContent>
               </Card>
 

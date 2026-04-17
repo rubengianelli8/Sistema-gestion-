@@ -34,15 +34,25 @@ export default async function VentasPage() {
     );
   }
 
-  const sales = salesResult.data || [];
+  const sales = (salesResult.data || []).map((s) => ({
+    id: s.id,
+    clienteId: s.clienteId,
+    vendedorNombre: s.vendedor?.name ?? "—",
+    total: s.total,
+    metodoPago: String(s.metodoPago),
+    fecha: s.fecha,
+    cliente: s.cliente ? { nombre: s.cliente.nombre } : null,
+  }));
   const customers = customersResult.success ? customersResult.data || [] : [];
   const products = productsResult.success
     ? (productsResult.data || []).map((product) => ({
         id: product.id,
         nombre: product.nombre,
         imagenUrl: product.imagenUrl,
-        precioMinorista: product.precioMinorista,
-        stockActual: product.stockActual,
+        codigoBarras: product.codigoBarras ?? null,
+        precioMinorista:
+          (product as { precioMinorista?: number }).precioMinorista ?? 0,
+        stockActual: product.stock,
       }))
     : [];
 

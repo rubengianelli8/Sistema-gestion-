@@ -25,6 +25,7 @@ interface SalesTableProps {
     id: number;
     nombre: string;
     imagenUrl?: string | null;
+    codigoBarras?: string | null;
     precioMinorista: number;
     stockActual: number;
   }>;
