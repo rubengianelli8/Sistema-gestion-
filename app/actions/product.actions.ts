@@ -146,6 +146,29 @@ export async function getAllProductsAction() {
   }
 }
 
+export async function getPaginatedProductsAction(params: {
+  q?: string;
+  page: number;
+  pageSize: number;
+}) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "No autorizado" };
+    }
+
+    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+
+    const data = await productService.getPaginatedProducts(params);
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}
+
 export async function searchProductsAction(query: string) {
   try {
     const session = await auth();

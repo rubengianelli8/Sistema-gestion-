@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable, ColumnDef } from "@/components/ui/data-table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteProductAction } from "@/app/actions/product.actions";
-import { Pencil, Trash2, Plus, Barcode, Printer } from "lucide-react";
+import { Pencil, Trash2, Plus, Barcode, Printer, Search } from "lucide-react";
 import { Barcode as BarcodeSvg } from "@/components/ui/barcode";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { Input } from "@/components/ui/input";
 import { ImagePreview } from "@/components/ui/image-preview";
 import { BarcodeDialog } from "@/components/products/barcode-dialog";
 import { BarcodeSheetDialog } from "@/components/products/barcode-sheet-dialog";
@@ -29,6 +30,7 @@ interface ProductsTableProps {
   page: number;
   pageSize: number;
   total: number;
+  initialQuery?: string;
 }
 
 export function ProductsTable({
@@ -36,8 +38,12 @@ export function ProductsTable({
   page,
   pageSize,
   total,
+  initialQuery = "",
 }: ProductsTableProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(initialQuery);
   const [products, setProducts] = useState(initialProducts);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
@@ -48,6 +54,29 @@ export function ProductsTable({
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
+    setProducts(initialProducts);
+  }, [initialProducts]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const urlQ = searchParams.get("q") ?? "";
+      if (query === urlQ) return;
+      setSelectedIds(new Set());
+      const params = new URLSearchParams(searchParams.toString());
+      if (query) params.set("q", query);
+      else params.delete("q");
+      params.set("page", "1");
+      params.set("pageSize", String(pageSize));
+      router.replace(`${pathname}?${params.toString()}`);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [query, pathname, router, searchParams, pageSize]);
 
   const selectableIds = useMemo(
     () => products.filter((p) => p.codigoBarras).map((p) => p.id),
@@ -257,6 +286,16 @@ export function ProductsTable({
             Agregar Producto
           </Button>
         </div>
+      </div>
+
+      <div className="mb-3 relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Buscar por nombre o código de barras..."
+          className="pl-9"
+        />
       </div>
 
       <DataTable

@@ -20,6 +20,16 @@ export class ProductService {
     return await this.repository.findAll();
   }
 
+  async getPaginatedProducts(params: {
+    q?: string;
+    page: number;
+    pageSize: number;
+  }) {
+    const { q, page, pageSize } = params;
+    const skip = (Math.max(1, page) - 1) * pageSize;
+    return await this.repository.findPaginated({ q, skip, take: pageSize });
+  }
+
   async getProductById(id: number) {
     const product = await this.repository.findById(id);
     if (!product) {

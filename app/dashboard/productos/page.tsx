@@ -1,5 +1,5 @@
 import { auth } from "@/app/api/auth/[...nextauth]/route";
-import { getAllProductsAction } from "@/app/actions/product.actions";
+import { getPaginatedProductsAction } from "@/app/actions/product.actions";
 import { redirect } from "next/navigation";
 import { requirePermission, Permission } from "@/lib/permissions";
 import { ProductsTable } from "@/components/products/products-table";
@@ -7,6 +7,7 @@ import { ProductsTable } from "@/components/products/products-table";
 const DEFAULT_PAGE_SIZE = 20;
 
 interface SearchParams {
+  q?: string;
   page?: string;
   pageSize?: string;
 }
@@ -31,10 +32,15 @@ export default async function ProductosPage({
   const resolvedSearchParams = await searchParams;
   const page = Math.max(1, Number(resolvedSearchParams.page) || 1);
   const pageSize = Math.max(1, Number(resolvedSearchParams.pageSize) || DEFAULT_PAGE_SIZE);
+  const q = (resolvedSearchParams.q ?? "").trim();
 
-  const result = await getAllProductsAction();
+  const result = await getPaginatedProductsAction({
+    q: q || undefined,
+    page,
+    pageSize,
+  });
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     return (
       <div className="p-6">
         <h1 className="text-2xl font-bold mb-4">Productos</h1>
@@ -43,10 +49,7 @@ export default async function ProductosPage({
     );
   }
 
-  const allProducts = result.data || [];
-  const total = allProducts.length;
-  const start = (page - 1) * pageSize;
-  const products = allProducts.slice(start, start + pageSize);
+  const { items: products, total } = result.data;
 
   return (
     <div className="p-6">
@@ -55,6 +58,7 @@ export default async function ProductosPage({
         page={page}
         pageSize={pageSize}
         total={total}
+        initialQuery={q}
       />
     </div>
   );

@@ -47,6 +47,31 @@ export class ProductRepository {
     });
   }
 
+  async findPaginated(params: { q?: string; skip: number; take: number }) {
+    const { q, skip, take } = params;
+    const where = q
+      ? {
+          OR: [
+            { nombre: { contains: q } },
+            { codigoBarras: { contains: q } },
+          ],
+        }
+      : {};
+
+    const [items, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: { categoria: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return { items, total };
+  }
+
   async findById(id: number) {
     return await this.prisma.product.findUnique({
       where: { id },
