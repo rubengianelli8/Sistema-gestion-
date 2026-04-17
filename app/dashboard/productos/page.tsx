@@ -1,7 +1,7 @@
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { getPaginatedProductsAction } from "@/app/actions/product.actions";
 import { redirect } from "next/navigation";
-import { requirePermission, Permission } from "@/lib/permissions";
+import { requirePermission, Permission, hasPermission } from "@/lib/permissions";
 import { ProductsTable } from "@/components/products/products-table";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -50,6 +50,10 @@ export default async function ProductosPage({
   }
 
   const { items: products, total } = result.data;
+  const canCreatePurchase = hasPermission(
+    session.user.rol,
+    Permission.COMPRAS_CREAR,
+  );
 
   return (
     <div className="p-6">
@@ -59,6 +63,7 @@ export default async function ProductosPage({
         pageSize={pageSize}
         total={total}
         initialQuery={q}
+        canCreatePurchase={canCreatePurchase}
       />
     </div>
   );

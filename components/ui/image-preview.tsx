@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ImageOff } from "lucide-react";
 import { getImageProxyUrl } from "@/lib/image-url";
+import { cn } from "@/lib/utils";
 
 interface ImagePreviewProps {
   url?: string | null;
@@ -30,13 +31,16 @@ export function ImagePreview({ url, alt, thumbClassName }: ImagePreviewProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+        className="cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Ver imagen ampliada"
       >
         <img
           src={src}
           alt={alt}
-          className={thumbClassName ?? "w-12 h-12 object-cover rounded border"}
+          className={cn(
+            thumbClassName ?? "w-12 h-12 object-cover rounded border",
+            "pointer-events-none",
+          )}
           loading="lazy"
           onError={() => setImageError(true)}
         />

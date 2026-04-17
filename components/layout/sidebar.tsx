@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   FileText,
   ShoppingBag,
+  Truck,
   Settings,
   LogOut,
   X,
@@ -23,6 +24,7 @@ const menuItems = [
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },
   { href: "/dashboard/presupuestos", label: "Presupuestos", icon: FileText },
   { href: "/dashboard/compras", label: "Compras", icon: ShoppingBag },
+  { href: "/dashboard/proveedores", label: "Proveedores", icon: Truck },
   { href: "/dashboard/usuarios", label: "Usuarios", icon: Settings },
 ];
 

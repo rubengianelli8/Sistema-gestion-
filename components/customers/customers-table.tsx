@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CustomerForm } from "./customer-form";
 import { deleteCustomerAction } from "@/app/actions/customer.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
@@ -28,7 +29,9 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
   const [customers, setCustomers] = useState(initialCustomers);
   const [formOpen, setFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Client | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleAdd = () => {
     setEditingCustomer(null);
@@ -40,26 +43,34 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
     setFormOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este cliente? (Eliminación lógica)")) {
-      return;
-    }
+  const handleDeleteRequest = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
 
-    setDeletingId(id);
+  const handleDeleteConfirm = async () => {
+    if (pendingDeleteId === null) return;
+
+    setDeleting(true);
     try {
-      const result = await deleteCustomerAction(id.toString());
+      const result = await deleteCustomerAction(pendingDeleteId.toString());
       if (result.success) {
         toast.success("Cliente eliminado exitosamente");
-        // Actualizar el estado local marcando como inactivo
-        setCustomers(customers.map(c => c.id === id ? { ...c, activo: false } : c));
+        setCustomers(
+          customers.map((c) =>
+            c.id === pendingDeleteId ? { ...c, activo: false } : c,
+          ),
+        );
         router.refresh();
       } else {
         toast.error(result.error || "Error al eliminar el cliente");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error inesperado");
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -119,8 +130,8 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(customer.id)}
-                        disabled={deletingId === customer.id}
+                        onClick={() => handleDeleteRequest(customer.id)}
+                        disabled={deleting && pendingDeleteId === customer.id}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -138,6 +149,19 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
         onOpenChange={setFormOpen}
         customer={editingCustomer}
         onSuccess={handleFormSuccess}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+          if (!open) setPendingDeleteId(null);
+        }}
+        title="¿Eliminar cliente?"
+        description="Esta acción no se puede deshacer. El cliente se marcará como inactivo."
+        confirmLabel="Eliminar"
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
       />
     </>
   );

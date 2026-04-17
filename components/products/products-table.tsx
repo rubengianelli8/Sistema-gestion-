@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable, ColumnDef } from "@/components/ui/data-table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteProductAction } from "@/app/actions/product.actions";
-import { Pencil, Trash2, Plus, Barcode, Printer, Search } from "lucide-react";
+import { Pencil, Trash2, Plus, Barcode, Printer, Search, ShoppingCart } from "lucide-react";
 import { Barcode as BarcodeSvg } from "@/components/ui/barcode";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,8 @@ interface ProductsTableProps {
   pageSize: number;
   total: number;
   initialQuery?: string;
+  /** Si el usuario puede registrar compras (COMPRAS_CREAR) */
+  canCreatePurchase?: boolean;
 }
 
 export function ProductsTable({
@@ -39,6 +41,7 @@ export function ProductsTable({
   pageSize,
   total,
   initialQuery = "",
+  canCreatePurchase = false,
 }: ProductsTableProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -272,6 +275,16 @@ export function ProductsTable({
       <div className="mb-4 flex flex-wrap justify-between items-center gap-2">
         <h1 className="text-2xl font-bold">Productos</h1>
         <div className="flex flex-wrap gap-2">
+          {canCreatePurchase ? (
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => router.push("/dashboard/compras/new")}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Nueva compra
+            </Button>
+          ) : null}
           <Button
             variant="outline"
             type="button"

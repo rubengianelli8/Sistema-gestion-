@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteUserAction } from "@/app/actions/user.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { UserRole } from "@prisma/client";
@@ -34,7 +35,9 @@ const rolLabels: Record<UserRole, string> = {
 export function UsersTable({ users: initialUsers }: UsersTableProps) {
   const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const handleNew = () => {
     router.push("/dashboard/usuarios/new");
@@ -44,17 +47,24 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
     router.push(`/dashboard/usuarios/${id}`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Estás seguro de que deseas desactivar este usuario?")) {
-      return;
-    }
+  const handleDeleteRequest = (id: number) => {
+    setPendingDeleteId(id);
+    setConfirmOpen(true);
+  };
 
-    setDeletingId(id);
+  const handleDeleteConfirm = async () => {
+    if (pendingDeleteId === null) return;
+
+    setDeleting(true);
     try {
-      const result = await deleteUserAction(id.toString());
+      const result = await deleteUserAction(pendingDeleteId.toString());
       if (result.success) {
         toast.success("Usuario desactivado exitosamente");
-        setUsers(users.map((u) => (u.id === id ? { ...u, estado: false } : u)));
+        setUsers(
+          users.map((u) =>
+            u.id === pendingDeleteId ? { ...u, estado: false } : u,
+          ),
+        );
         router.refresh();
       } else {
         toast.error(result.error || "Error al desactivar el usuario");
@@ -62,7 +72,9 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
     } catch {
       toast.error("Error inesperado");
     } finally {
-      setDeletingId(null);
+      setDeleting(false);
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -136,8 +148,8 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(user.id)}
-                        disabled={deletingId === user.id}
+                        onClick={() => handleDeleteRequest(user.id)}
+                        disabled={deleting && pendingDeleteId === user.id}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -149,6 +161,19 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          setConfirmOpen(open);
+          if (!open) setPendingDeleteId(null);
+        }}
+        title="¿Desactivar usuario?"
+        description="El usuario quedará inactivo y no podrá iniciar sesión."
+        confirmLabel="Desactivar"
+        loading={deleting}
+        onConfirm={handleDeleteConfirm}
+      />
     </>
   );
 }
