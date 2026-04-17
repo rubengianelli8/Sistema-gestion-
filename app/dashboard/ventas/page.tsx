@@ -36,11 +36,19 @@ export default async function VentasPage() {
 
   const sales = salesResult.data || [];
   const customers = customersResult.success ? customersResult.data || [] : [];
-  const products = productsResult.success ? productsResult.data || [] : [];
+  const products = productsResult.success
+    ? (productsResult.data || []).map((product) => ({
+        id: product.id,
+        nombre: product.nombre,
+        imagenUrl: product.imagenUrl,
+        precioMinorista: product.precioMinorista,
+        stockActual: product.stockActual,
+      }))
+    : [];
 
   return (
     <div className="p-6">
-      {/* <SalesTable sales={sales} customers={customers} products={products} /> */}
+      <SalesTable sales={sales} customers={customers} products={products} />
     </div>
   );
 }

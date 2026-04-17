@@ -21,7 +21,13 @@ interface Sale {
 interface SalesTableProps {
   sales: Sale[];
   customers: Array<{ id: number; nombre: string }>;
-  products: Array<{ id: number; nombre: string; precioMinorista: number; stockActual: number }>;
+  products: Array<{
+    id: number;
+    nombre: string;
+    imagenUrl?: string | null;
+    precioMinorista: number;
+    stockActual: number;
+  }>;
 }
 
 export function SalesTable({ sales: initialSales, customers, products }: SalesTableProps) {

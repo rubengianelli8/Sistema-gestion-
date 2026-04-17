@@ -7,14 +7,17 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteProductAction } from "@/app/actions/product.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ImagePreview } from "@/components/ui/image-preview";
 
 interface Product {
   id: number;
   nombre: string;
+  imagenUrl?: string | null;
   codigoBarras?: string | null;
-  precioMinorista: number;
-  precioMayorista: number;
-  stockActual: number;
+  precioMinorista?: number | null;
+  precioMayorista?: number | null;
+  stockActual?: number | null;
+  stock?: number | null;
 }
 
 interface ProductsTableProps {
@@ -25,6 +28,11 @@ interface ProductsTableProps {
 }
 
 const columns: ColumnDef<Product>[] = [
+  {
+    key: "imagenUrl",
+    header: "Imagen",
+    render: (row) => <ImagePreview url={row.imagenUrl} alt={row.nombre} />,
+  },
   { key: "nombre", header: "Nombre" },
   {
     key: "codigoBarras",
@@ -34,14 +42,20 @@ const columns: ColumnDef<Product>[] = [
   {
     key: "precioMinorista",
     header: "Precio Minorista",
-    render: (row) => `$${row.precioMinorista.toFixed(2)}`,
+    render: (row) =>
+      typeof row.precioMinorista === "number" ? `$${row.precioMinorista.toFixed(2)}` : "-",
   },
   {
     key: "precioMayorista",
     header: "Precio Mayorista",
-    render: (row) => `$${row.precioMayorista.toFixed(2)}`,
+    render: (row) =>
+      typeof row.precioMayorista === "number" ? `$${row.precioMayorista.toFixed(2)}` : "-",
   },
-  { key: "stockActual", header: "Stock" },
+  {
+    key: "stockActual",
+    header: "Stock",
+    render: (row) => row.stockActual ?? row.stock ?? "-",
+  },
 ];
 
 export function ProductsTable({

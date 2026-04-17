@@ -14,7 +14,7 @@ interface SearchParams {
 export default async function ProductosPage({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
   const session = await auth();
 
@@ -28,8 +28,9 @@ export default async function ProductosPage({
     redirect("/dashboard");
   }
 
-  const page = Math.max(1, Number(searchParams.page) || 1);
-  const pageSize = Math.max(1, Number(searchParams.pageSize) || DEFAULT_PAGE_SIZE);
+  const resolvedSearchParams = await searchParams;
+  const page = Math.max(1, Number(resolvedSearchParams.page) || 1);
+  const pageSize = Math.max(1, Number(resolvedSearchParams.pageSize) || DEFAULT_PAGE_SIZE);
 
   const result = await getAllProductsAction();
 

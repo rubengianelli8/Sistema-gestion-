@@ -14,6 +14,7 @@ import {
 import { createSaleAction } from "@/app/actions/sale.actions";
 import { PaymentMethod } from "@prisma/client";
 import { X, Plus } from "lucide-react";
+import { ImagePreview } from "@/components/ui/image-preview";
 
 interface SaleFormProps {
   open: boolean;
@@ -22,6 +23,7 @@ interface SaleFormProps {
   products: Array<{
     id: number;
     nombre: string;
+    imagenUrl?: string | null;
     precioMinorista: number;
     stockActual: number;
   }>;
@@ -32,6 +34,7 @@ interface SaleItem {
   productoId: number;
   cantidad: number;
   productoNombre: string;
+  imagenUrl?: string | null;
   precioUnitario: number;
   subtotal: number;
 }
@@ -112,6 +115,7 @@ export function SaleForm({
           productoId: product.id,
           cantidad,
           productoNombre: product.nombre,
+          imagenUrl: product.imagenUrl,
           precioUnitario: product.precioMinorista,
           subtotal: product.precioMinorista * cantidad,
         },
@@ -163,6 +167,7 @@ export function SaleForm({
   };
 
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+  const selectedProduct = products.find((p) => p.id === Number(selectedProductId));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,32 +268,40 @@ export function SaleForm({
 
           <div className="border-t pt-4">
             <h3 className="font-semibold mb-2">Productos</h3>
-            <div className="flex gap-2 mb-4">
-              <select
-                value={selectedProductId}
-                onChange={(e) => setSelectedProductId(e.target.value)}
-                className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-              >
-                <option value="">Seleccionar producto</option>
-                {availableProducts.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.nombre} - Stock: {product.stockActual} - $
-                    {product.precioMinorista}
-                  </option>
-                ))}
-              </select>
-              <Input
-                type="number"
-                min="1"
-                value={selectedQuantity}
-                onChange={(e) => setSelectedQuantity(e.target.value)}
-                placeholder="Cantidad"
-                className="w-24"
-              />
-              <Button type="button" onClick={handleAddProduct}>
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar
-              </Button>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="shrink-0">
+                  <ImagePreview
+                    url={selectedProduct?.imagenUrl}
+                    alt={selectedProduct?.nombre || "Producto sin seleccionar"}
+                  />
+                </div>
+                <select
+                  value={selectedProductId}
+                  onChange={(e) => setSelectedProductId(e.target.value)}
+                  className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                >
+                  <option value="">Seleccionar producto</option>
+                  {availableProducts.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.nombre} - Stock: {product.stockActual} - $
+                      {product.precioMinorista}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  type="number"
+                  min="1"
+                  value={selectedQuantity}
+                  onChange={(e) => setSelectedQuantity(e.target.value)}
+                  placeholder="Cantidad"
+                  className="w-24"
+                />
+                <Button type="button" onClick={handleAddProduct}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar
+                </Button>
+              </div>
             </div>
 
             {items.length > 0 && (
@@ -306,7 +319,12 @@ export function SaleForm({
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.productoId} className="border-t">
-                        <td className="px-4 py-2">{item.productoNombre}</td>
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-2">
+                            <ImagePreview url={item.imagenUrl} alt={item.productoNombre} />
+                            <span>{item.productoNombre}</span>
+                          </div>
+                        </td>
                         <td className="px-4 py-2">
                           <Input
                             type="number"

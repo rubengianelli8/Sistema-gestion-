@@ -16,6 +16,7 @@ import {
 } from "@/lib/validations/product-form.schema";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { ImageUploader } from "@/components/ui/image-uploader";
 
 interface Category {
   id: number;
@@ -102,6 +103,8 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
   const {
     handleSubmit,
     register,
+    watch,
+    setValue,
     formState: { isSubmitting, errors },
   } = methods;
 
@@ -109,6 +112,7 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
     control: methods.control,
     name: "supplierPrices",
   });
+  const imageUrl = watch("imagenUrl");
 
   const onSubmit = handleSubmit(async (data) => {
     setServerError(null);
@@ -403,13 +407,16 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                   <CardTitle className="text-base">Imagen</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <RhfInput
-                    name="imagenUrl"
-                    label="URL de imagen"
-                    placeholder="https://ejemplo.com/imagen.jpg"
+                  <ImageUploader
+                    value={imageUrl}
+                    onChange={(url) =>
+                      setValue("imagenUrl", url ?? "", {
+                        shouldDirty: true,
+                      })
+                    }
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Ingresá la URL de una imagen del producto.
+                    Podés subir una imagen desde tu dispositivo o tomar una foto.
                   </p>
                 </CardContent>
               </Card>

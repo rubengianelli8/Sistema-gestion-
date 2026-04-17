@@ -4,6 +4,7 @@ import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { productService } from "@/services";
 import { requirePermission, Permission } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
+import { deleteFileFromS3ByUrl } from "@/lib/s3";
 
 interface SupplierPriceInput {
   proveedorId: number;
@@ -173,10 +174,15 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
 
     requirePermission(session.user.rol, Permission.PRODUCTOS_EDITAR);
 
+    const productId = parseInt(id);
     const { supplierPrices, ...productData } = data;
+    const existingProduct = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { imagenUrl: true },
+    });
 
     const product = await productService.updateProduct(
-      parseInt(id),
+      productId,
       {
         nombre: productData.nombre,
         descripcion: productData.descripcion,
@@ -196,7 +202,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
       const incomingProveedorIds = supplierPrices.map((sp) => sp.proveedorId);
       await prisma.supplierPrice.deleteMany({
         where: {
-          productoId: parseInt(id),
+          productoId: productId,
           proveedorId: { notIn: incomingProveedorIds },
         },
       });
@@ -208,7 +214,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
             prisma.supplierPrice.upsert({
               where: {
                 productoId_proveedorId: {
-                  productoId: parseInt(id),
+                  productoId: productId,
                   proveedorId: sp.proveedorId,
                 },
               },
@@ -217,7 +223,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
                 codigoProveedor: sp.codigoProveedor,
               },
               create: {
-                productoId: parseInt(id),
+                productoId: productId,
                 proveedorId: sp.proveedorId,
                 precio: sp.precio,
                 codigoProveedor: sp.codigoProveedor,
@@ -225,6 +231,16 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
             }),
           ),
         );
+      }
+    }
+
+    const previousImage = existingProduct?.imagenUrl ?? null;
+    const currentImage = product.imagenUrl ?? null;
+    if (previousImage && previousImage !== currentImage) {
+      try {
+        await deleteFileFromS3ByUrl(previousImage);
+      } catch {
+        // Evita bloquear la actualización del producto por fallas al limpiar archivos viejos.
       }
     }
 
