@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { createCustomerAction, updateCustomerAction } from "@/app/actions/customer.actions";
+import { toast } from "sonner";
 import { CustomerCreateInput } from "@/lib/validations/customer.schema";
 import { Client } from "@prisma/client";
 
@@ -65,21 +66,29 @@ export function CustomerForm({ open, onOpenChange, customer, onSuccess }: Custom
       if (customer) {
         const result = await updateCustomerAction(customer.id!.toString(), data);
         if (!result.success) {
-          setError(result.error || "Error al actualizar el cliente");
+          const msg = result.error || "Error al actualizar el cliente";
+          setError(msg);
+          toast.error(msg);
           return;
         }
+        toast.success("Cliente actualizado exitosamente");
       } else {
         const result = await createCustomerAction(data);
         if (!result.success) {
-          setError(result.error || "Error al crear el cliente");
+          const msg = result.error || "Error al crear el cliente";
+          setError(msg);
+          toast.error(msg);
           return;
         }
+        toast.success("Cliente creado exitosamente");
       }
 
       onSuccess();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      setError(msg);
+      toast.error("Error inesperado");
     } finally {
       setLoading(false);
     }

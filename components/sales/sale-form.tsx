@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { createSaleAction } from "@/app/actions/sale.actions";
+import { toast } from "sonner";
 import { PaymentMethod } from "@prisma/client";
 import { X, Plus } from "lucide-react";
 import { ImagePreview } from "@/components/ui/image-preview";
@@ -175,7 +176,9 @@ export function SaleForm({
     setError(null);
 
     if (items.length === 0) {
-      setError("Debe agregar al menos un producto");
+      const msg = "Debe agregar al menos un producto";
+      setError(msg);
+      toast.error(msg);
       setLoading(false);
       return;
     }
@@ -192,14 +195,19 @@ export function SaleForm({
       });
 
       if (!result.success) {
-        setError(result.error || "Error al crear la venta");
+        const msg = result.error || "Error al crear la venta";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
+      toast.success("Venta creada exitosamente");
       onSuccess();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      setError(msg);
+      toast.error("Error inesperado");
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { deleteUserAction } from "@/app/actions/user.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { UserRole } from "@prisma/client";
+import { toast } from "sonner";
 
 interface User {
   id: number;
@@ -52,13 +53,14 @@ export function UsersTable({ users: initialUsers }: UsersTableProps) {
     try {
       const result = await deleteUserAction(id.toString());
       if (result.success) {
+        toast.success("Usuario desactivado exitosamente");
         setUsers(users.map((u) => (u.id === id ? { ...u, estado: false } : u)));
         router.refresh();
       } else {
-        alert(result.error || "Error al desactivar el usuario");
+        toast.error(result.error || "Error al desactivar el usuario");
       }
     } catch {
-      alert("Error al desactivar el usuario");
+      toast.error("Error inesperado");
     } finally {
       setDeletingId(null);
     }

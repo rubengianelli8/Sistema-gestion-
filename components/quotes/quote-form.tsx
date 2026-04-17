@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { createQuoteAction } from "@/app/actions/quote.actions";
+import { toast } from "sonner";
 import { X, Plus } from "lucide-react";
 
 interface QuoteFormProps {
@@ -142,13 +143,17 @@ export function QuoteForm({
     setError(null);
 
     if (!clienteId) {
-      setError("Debe seleccionar un cliente");
+      const msg = "Debe seleccionar un cliente";
+      setError(msg);
+      toast.error(msg);
       setLoading(false);
       return;
     }
 
     if (items.length === 0) {
-      setError("Debe agregar al menos un producto");
+      const msg = "Debe agregar al menos un producto";
+      setError(msg);
+      toast.error(msg);
       setLoading(false);
       return;
     }
@@ -165,14 +170,19 @@ export function QuoteForm({
       });
 
       if (!result.success) {
-        setError(result.error || "Error al crear el presupuesto");
+        const msg = result.error || "Error al crear el presupuesto";
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
+      toast.success("Presupuesto creado exitosamente");
       onSuccess();
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      setError(msg);
+      toast.error("Error inesperado");
     } finally {
       setLoading(false);
     }

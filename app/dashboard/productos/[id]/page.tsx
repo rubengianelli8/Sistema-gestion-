@@ -2,6 +2,9 @@ import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { redirect, notFound } from "next/navigation";
 import { requirePermission, Permission } from "@/lib/permissions";
 import { getProductByIdAction } from "@/app/actions/product.actions";
+import { getAllCategoriesAction } from "@/app/actions/category.actions";
+import { getAllSuppliersAction } from "@/app/actions/supplier.actions";
+import { getAllUnitsAction } from "@/app/actions/unit.actions";
 import { ProductForm } from "@/components/products/product-form";
 
 interface EditarProductoPageProps {
@@ -25,13 +28,30 @@ export default async function EditarProductoPage({
     redirect("/dashboard");
   }
 
-  const result = await getProductByIdAction(id);
+  const [productResult, categoriesResult, suppliersResult, unitsResult] =
+    await Promise.all([
+      getProductByIdAction(id),
+      getAllCategoriesAction(),
+      getAllSuppliersAction(),
+      getAllUnitsAction(),
+    ]);
 
-  if (!result.success || !result.data) {
+  if (!productResult.success || !productResult.data) {
     notFound();
   }
 
+  const categories = categoriesResult.success ? (categoriesResult.data ?? []) : [];
+  const suppliers = suppliersResult.success ? (suppliersResult.data ?? []) : [];
+  const units = unitsResult.success ? (unitsResult.data ?? []) : [];
+
   return (
-    <div className="p-6">{/* <ProductForm product={result.data} /> */}</div>
+    <div className="p-6">
+      <ProductForm
+        product={productResult.data}
+        categories={categories}
+        suppliers={suppliers}
+        units={units}
+      />
+    </div>
   );
 }

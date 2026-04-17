@@ -7,6 +7,7 @@ import { deleteCustomerAction } from "@/app/actions/customer.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Client } from "@prisma/client";
+import { toast } from "sonner";
 
 /* interface Customer {
   id: number;
@@ -48,14 +49,15 @@ export function CustomersTable({ customers: initialCustomers }: CustomersTablePr
     try {
       const result = await deleteCustomerAction(id.toString());
       if (result.success) {
+        toast.success("Cliente eliminado exitosamente");
         // Actualizar el estado local marcando como inactivo
         setCustomers(customers.map(c => c.id === id ? { ...c, activo: false } : c));
         router.refresh();
       } else {
-        alert(result.error || "Error al eliminar el cliente");
+        toast.error(result.error || "Error al eliminar el cliente");
       }
     } catch (error) {
-      alert("Error al eliminar el cliente");
+      toast.error("Error inesperado");
     } finally {
       setDeletingId(null);
     }

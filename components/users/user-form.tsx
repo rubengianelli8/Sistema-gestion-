@@ -15,6 +15,7 @@ import {
   type UserUpdateFormValues,
 } from "@/lib/validations/user-form.schema";
 import { UserRole } from "@prisma/client";
+import { toast } from "sonner";
 
 interface Branch {
   id: number;
@@ -73,36 +74,48 @@ export function UserForm({ user, branches }: UserFormProps) {
   const onSubmit = handleSubmit(async (data) => {
     setServerError(null);
 
-    if (isEdit) {
-      const updateData = data as UserUpdateFormValues;
-      const result = await updateUserAction(user.id.toString(), {
-        name: updateData.name,
-        email: updateData.email,
-        password: updateData.password || undefined,
-        rol: updateData.rol as UserRole,
-      });
+    try {
+      if (isEdit) {
+        const updateData = data as UserUpdateFormValues;
+        const result = await updateUserAction(user.id.toString(), {
+          name: updateData.name,
+          email: updateData.email,
+          password: updateData.password || undefined,
+          rol: updateData.rol as UserRole,
+        });
 
-      if (!result.success) {
-        setServerError(result.error || "Error al actualizar el usuario");
-        return;
-      }
-    } else {
-      const createData = data as UserCreateFormValues;
-      const result = await createUserAction({
-        name: createData.name,
-        email: createData.email,
-        password: createData.password,
-        rol: createData.rol as UserRole,
-      });
+        if (!result.success) {
+          const msg = result.error || "Error al actualizar el usuario";
+          setServerError(msg);
+          toast.error(msg);
+          return;
+        }
+        toast.success("Usuario actualizado exitosamente");
+      } else {
+        const createData = data as UserCreateFormValues;
+        const result = await createUserAction({
+          name: createData.name,
+          email: createData.email,
+          password: createData.password,
+          rol: createData.rol as UserRole,
+        });
 
-      if (!result.success) {
-        setServerError(result.error || "Error al crear el usuario");
-        return;
+        if (!result.success) {
+          const msg = result.error || "Error al crear el usuario";
+          setServerError(msg);
+          toast.error(msg);
+          return;
+        }
+        toast.success("Usuario creado exitosamente");
       }
+
+      router.push("/dashboard/usuarios");
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error desconocido";
+      setServerError(msg);
+      toast.error("Error inesperado");
     }
-
-    router.push("/dashboard/usuarios");
-    router.refresh();
   });
 
   return (

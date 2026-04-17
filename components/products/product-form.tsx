@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { RhfInput } from "@/components/ui/rhf-input";
 import { RhfSelect } from "@/components/ui/rhf-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createProductAction, updateProductAction } from "@/app/actions/product.actions";
+import {
+  createProductAction,
+  updateProductAction,
+} from "@/app/actions/product.actions";
 import {
   productCreateYupSchema,
   productUpdateYupSchema,
@@ -17,6 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ImageUploader } from "@/components/ui/image-uploader";
+import { toast } from "sonner";
 
 interface Category {
   id: number;
@@ -60,7 +64,12 @@ interface ProductFormProps {
   units: Unit[];
 }
 
-export function ProductForm({ product, categories, suppliers, units }: ProductFormProps) {
+export function ProductForm({
+  product,
+  categories,
+  suppliers,
+  units,
+}: ProductFormProps) {
   const router = useRouter();
   const isEdit = !!product;
   const [serverError, setServerError] = useState<string | null>(null);
@@ -72,7 +81,10 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
 
   const unitOptions = [
     { value: "", label: "Sin unidad" },
-    ...units.map((u) => ({ value: String(u.id), label: `${u.nombre} (${u.abreviatura})` })),
+    ...units.map((u) => ({
+      value: String(u.id),
+      label: `${u.nombre} (${u.abreviatura})`,
+    })),
   ];
 
   const supplierOptions = [
@@ -81,7 +93,9 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
   ];
 
   const methods = useForm<ProductCreateFormValues>({
-    resolver: yupResolver(isEdit ? productUpdateYupSchema : productCreateYupSchema) as never,
+    resolver: yupResolver(
+      isEdit ? productUpdateYupSchema : productCreateYupSchema,
+    ) as never,
     defaultValues: {
       nombre: product?.nombre ?? "",
       descripcion: product?.descripcion ?? "",
@@ -135,22 +149,33 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
         })),
     };
 
-    if (isEdit) {
-      const result = await updateProductAction(String(product.id), payload);
-      if (!result.success) {
-        setServerError(result.error || "Error al actualizar el producto");
-        return;
+    try {
+      if (isEdit) {
+        const result = await updateProductAction(String(product.id), payload);
+        if (!result.success) {
+          const msg = result.error || "Error al actualizar el producto";
+          setServerError(msg);
+          toast.error(msg);
+          return;
+        }
+        toast.success("Producto actualizado exitosamente");
+      } else {
+        const result = await createProductAction(payload);
+        if (!result.success) {
+          const msg = result.error || "Error al crear el producto";
+          setServerError(msg);
+          toast.error(msg);
+          return;
+        }
+        toast.success("Producto creado exitosamente");
       }
-    } else {
-      const result = await createProductAction(payload);
-      if (!result.success) {
-        setServerError(result.error || "Error al crear el producto");
-        return;
-      }
-    }
 
-    router.push("/dashboard/productos");
-    router.refresh();
+      router.push("/dashboard/productos");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error inesperado";
+      setServerError(msg);
+      toast.error("Error inesperado");
+    }
   });
 
   return (
@@ -192,8 +217,8 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                 {isSubmitting
                   ? "Guardando..."
                   : isEdit
-                  ? "Actualizar producto"
-                  : "Guardar producto"}
+                    ? "Actualizar producto"
+                    : "Guardar producto"}
               </Button>
             </div>
           </div>
@@ -213,7 +238,9 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
               {/* Información general */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Información General</CardTitle>
+                  <CardTitle className="text-base">
+                    Información General
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <RhfInput
@@ -232,7 +259,9 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                       className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                     />
                     {errors.descripcion && (
-                      <p className="text-sm text-red-600">{errors.descripcion.message}</p>
+                      <p className="text-sm text-red-600">
+                        {errors.descripcion.message}
+                      </p>
                     )}
                   </div>
 
@@ -249,7 +278,9 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base">Precios por Proveedor</CardTitle>
+                      <CardTitle className="text-base">
+                        Precios por Proveedor
+                      </CardTitle>
                       <p className="text-sm text-muted-foreground mt-1">
                         Asociá precios de compra a cada proveedor
                       </p>
@@ -259,7 +290,11 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                       variant="outline"
                       size="sm"
                       onClick={() =>
-                        append({ proveedorId: 0, precio: 0, codigoProveedor: "" })
+                        append({
+                          proveedorId: 0,
+                          precio: 0,
+                          codigoProveedor: "",
+                        })
                       }
                       disabled={suppliers.length === 0}
                     >
@@ -274,7 +309,8 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                     </p>
                   ) : fields.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No se agregaron proveedores. Usá el botón "Agregar proveedor".
+                      No se agregaron proveedores. Usá el botón "Agregar
+                      proveedor".
                     </p>
                   ) : (
                     <div className="space-y-4">
@@ -284,12 +320,16 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                           className="grid grid-cols-1 sm:grid-cols-[1fr_140px_160px_auto] gap-3 items-end p-3 rounded-lg border bg-muted/20"
                         >
                           <div className="space-y-1">
-                            <Label htmlFor={`supplierPrices.${index}.proveedorId`}>
+                            <Label
+                              htmlFor={`supplierPrices.${index}.proveedorId`}
+                            >
                               Proveedor
                             </Label>
                             <select
                               id={`supplierPrices.${index}.proveedorId`}
-                              {...register(`supplierPrices.${index}.proveedorId` as const)}
+                              {...register(
+                                `supplierPrices.${index}.proveedorId` as const,
+                              )}
                               className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             >
                               {supplierOptions.map((o) => (
@@ -300,7 +340,10 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                             </select>
                             {errors.supplierPrices?.[index]?.proveedorId && (
                               <p className="text-xs text-red-600">
-                                {errors.supplierPrices[index]?.proveedorId?.message}
+                                {
+                                  errors.supplierPrices[index]?.proveedorId
+                                    ?.message
+                                }
                               </p>
                             )}
                           </div>
@@ -315,7 +358,9 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                               step="0.01"
                               min="0"
                               placeholder="0.00"
-                              {...register(`supplierPrices.${index}.precio` as const)}
+                              {...register(
+                                `supplierPrices.${index}.precio` as const,
+                              )}
                             />
                             {errors.supplierPrices?.[index]?.precio && (
                               <p className="text-xs text-red-600">
@@ -325,13 +370,17 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                           </div>
 
                           <div className="space-y-1">
-                            <Label htmlFor={`supplierPrices.${index}.codigoProveedor`}>
+                            <Label
+                              htmlFor={`supplierPrices.${index}.codigoProveedor`}
+                            >
                               Código proveedor
                             </Label>
                             <Input
                               id={`supplierPrices.${index}.codigoProveedor`}
                               placeholder="Opcional"
-                              {...register(`supplierPrices.${index}.codigoProveedor` as const)}
+                              {...register(
+                                `supplierPrices.${index}.codigoProveedor` as const,
+                              )}
                             />
                           </div>
 
@@ -396,7 +445,8 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                     placeholder="0"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Se mostrará una alerta cuando el stock esté por debajo del mínimo.
+                    Se mostrará una alerta cuando el stock esté por debajo del
+                    mínimo.
                   </p>
                 </CardContent>
               </Card>
@@ -416,7 +466,8 @@ export function ProductForm({ product, categories, suppliers, units }: ProductFo
                     }
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Podés subir una imagen desde tu dispositivo o tomar una foto.
+                    Podés subir una imagen desde tu dispositivo o tomar una
+                    foto.
                   </p>
                 </CardContent>
               </Card>

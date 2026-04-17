@@ -8,6 +8,7 @@ import { deleteProductAction } from "@/app/actions/product.actions";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ImagePreview } from "@/components/ui/image-preview";
+import { toast } from "sonner";
 
 interface Product {
   id: number;
@@ -82,14 +83,17 @@ export function ProductsTable({
     try {
       const result = await deleteProductAction(pendingDeleteId.toString());
       if (result.success) {
+        toast.success("Producto eliminado exitosamente");
         setProducts(products.filter((p) => p.id !== pendingDeleteId));
         setConfirmOpen(false);
         setPendingDeleteId(null);
       } else {
+        toast.error(result.error || "Error al eliminar el producto");
         setConfirmOpen(false);
         setPendingDeleteId(null);
       }
     } catch {
+      toast.error("Error inesperado");
       setConfirmOpen(false);
       setPendingDeleteId(null);
     } finally {
