@@ -19,8 +19,7 @@ interface Product {
   nombre: string;
   imagenUrl?: string | null;
   codigoBarras?: string | null;
-  precioMinorista?: number | null;
-  precioMayorista?: number | null;
+  precio?: number | null;
   stockActual?: number | null;
   stock?: number | null;
 }
@@ -177,19 +176,11 @@ export function ProductsTable({
           ),
       },
       {
-        key: "precioMinorista",
-        header: "Precio Minorista",
+        key: "precio",
+        header: "Precio",
         render: (row) =>
-          typeof row.precioMinorista === "number"
-            ? `$${row.precioMinorista.toFixed(2)}`
-            : "-",
-      },
-      {
-        key: "precioMayorista",
-        header: "Precio Mayorista",
-        render: (row) =>
-          typeof row.precioMayorista === "number"
-            ? `$${row.precioMayorista.toFixed(2)}`
+          typeof row.precio === "number"
+            ? `$${row.precio.toFixed(2)}`
             : "-",
       },
       {

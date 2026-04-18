@@ -50,8 +50,7 @@ export default async function VentasPage() {
         nombre: product.nombre,
         imagenUrl: product.imagenUrl,
         codigoBarras: product.codigoBarras ?? null,
-        precioMinorista:
-          (product as { precioMinorista?: number }).precioMinorista ?? 0,
+        precio: product.precio ?? 0,
         stockActual: product.stock,
       }))
     : [];

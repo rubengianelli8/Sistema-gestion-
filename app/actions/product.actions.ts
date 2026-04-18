@@ -21,6 +21,7 @@ interface ProductInput {
   unitId?: number | null;
   stock?: number;
   stockMinimo?: number;
+  precio?: number;
   supplierPrices?: SupplierPriceInput[];
 }
 
@@ -50,6 +51,7 @@ export async function createProductAction(data: ProductInput) {
         unitId: productData.unitId ?? undefined,
         stock: productData.stock ?? 0,
         stockMinimo: productData.stockMinimo ?? 0,
+        precio: productData.precio ?? 0,
         branchId,
       },
       parseInt(session.user.id),
@@ -215,6 +217,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
         unitId: productData.unitId ?? undefined,
         stock: productData.stock,
         stockMinimo: productData.stockMinimo,
+        precio: productData.precio,
       },
       parseInt(session.user.id),
       session.user.name,

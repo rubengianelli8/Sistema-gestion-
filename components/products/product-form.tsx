@@ -51,6 +51,7 @@ interface ProductData {
   descripcion?: string | null;
   codigoBarras?: string | null;
   imagenUrl?: string | null;
+  precio?: number | null;
   stock: number;
   stockMinimo: number;
   categoriaId?: number | null;
@@ -106,6 +107,7 @@ export function ProductForm({
       unitId: product?.unitId ?? null,
       stock: product?.stock ?? 0,
       stockMinimo: product?.stockMinimo ?? 0,
+      precio: product?.precio ?? 0,
       supplierPrices:
         product?.supplierPrices?.map((sp) => ({
           proveedorId: sp.proveedorId,
@@ -142,6 +144,7 @@ export function ProductForm({
       unitId: data.unitId ? Number(data.unitId) : null,
       stock: data.stock ?? 0,
       stockMinimo: data.stockMinimo ?? 0,
+      precio: Number(data.precio) || 0,
       supplierPrices: (data.supplierPrices ?? [])
         .filter((sp) => sp.proveedorId)
         .map((sp) => ({
@@ -274,12 +277,27 @@ export function ProductForm({
                   />
                   {codigoBarrasWatch?.trim() ? (
                     <div className="space-y-2">
-                      <Label>Vista previa</Label>
                       <div className="rounded-md border border-border bg-muted/30 p-3 inline-block">
                         <Barcode value={codigoBarrasWatch.trim()} />
                       </div>
                     </div>
                   ) : null}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Precio de venta</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RhfInput
+                    name="precio"
+                    label="Precio ($) *"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                  />
                 </CardContent>
               </Card>
 

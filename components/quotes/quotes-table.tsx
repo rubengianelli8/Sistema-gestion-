@@ -37,7 +37,7 @@ interface QuotesTableProps {
   products: Array<{
     id: number;
     nombre: string;
-    precioMinorista: number;
+    precio: number;
   }>;
 }
 

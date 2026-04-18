@@ -10,6 +10,7 @@ export interface CreateProductDto {
   stockActual?: number;
   stockMinimo?: number;
   imagenUrl?: string;
+  precio?: number;
   branchId?: number;
 }
 
@@ -22,6 +23,7 @@ export interface UpdateProductDto {
   stock?: number;
   stockMinimo?: number;
   imagenUrl?: string;
+  precio?: number;
 }
 
 export class ProductRepository {

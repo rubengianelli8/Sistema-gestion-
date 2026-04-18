@@ -14,12 +14,14 @@ import {
   Settings,
   LogOut,
   X,
+  Tags,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/productos", label: "Productos", icon: Package },
+  { href: "/dashboard/categorias", label: "Categorías", icon: Tags },
   { href: "/dashboard/clientes", label: "Clientes", icon: Users },
   { href: "/dashboard/ventas", label: "Ventas", icon: ShoppingCart },
   { href: "/dashboard/presupuestos", label: "Presupuestos", icon: FileText },

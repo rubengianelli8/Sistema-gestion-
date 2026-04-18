@@ -66,4 +66,38 @@ export class PurchaseRepository {
       orderBy: { fecha: "desc" },
     });
   }
+
+  async findById(id: number) {
+    return await this.prisma.purchase.findUnique({
+      where: { id },
+      include: {
+        proveedor: true,
+        items: {
+          include: {
+            producto: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateStatus(
+    id: number,
+    estado: PurchaseStatus,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const client = tx ?? this.prisma;
+    return await client.purchase.update({
+      where: { id },
+      data: { estado },
+      include: {
+        proveedor: true,
+        items: {
+          include: {
+            producto: true,
+          },
+        },
+      },
+    });
+  }
 }

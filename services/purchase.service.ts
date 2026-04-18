@@ -1,6 +1,7 @@
 import { PurchaseRepository } from "@/repositories/purchase.repository";
 import prisma from "@/lib/prisma";
 import type { PurchaseCreateInput } from "@/lib/validations/purchase.schema";
+import { PurchaseStatus } from "@prisma/client";
 
 export class PurchaseService {
   constructor(private readonly repository: PurchaseRepository) {}
@@ -78,6 +79,56 @@ export class PurchaseService {
       }
 
       return purchase;
+    });
+  }
+
+  async getAllPurchases() {
+    return await this.repository.findAll();
+  }
+
+  async getPurchaseById(id: number) {
+    const purchase = await this.repository.findById(id);
+    if (!purchase) {
+      throw new Error("Compra no encontrada");
+    }
+    return purchase;
+  }
+
+  async cancelPurchase(id: number, branchId: number) {
+    return await prisma.$transaction(async (tx) => {
+      const purchase = await tx.purchase.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+      if (!purchase) {
+        throw new Error("Compra no encontrada");
+      }
+      if (purchase.branchId !== branchId) {
+        throw new Error("La compra no pertenece a la sucursal actual");
+      }
+      if (purchase.estado === PurchaseStatus.CANCELADA) {
+        throw new Error("La compra ya está anulada");
+      }
+
+      for (const item of purchase.items) {
+        const product = await tx.product.findUnique({
+          where: { id: item.productoId },
+        });
+        if (!product) {
+          throw new Error(`Producto ${item.productoId} no encontrado`);
+        }
+        if (product.stock < item.cantidad) {
+          throw new Error(
+            `No se puede anular: stock insuficiente para el producto "${product.nombre}"`,
+          );
+        }
+        await tx.product.update({
+          where: { id: item.productoId },
+          data: { stock: { decrement: item.cantidad } },
+        });
+      }
+
+      return await this.repository.updateStatus(id, PurchaseStatus.CANCELADA, tx);
     });
   }
 }

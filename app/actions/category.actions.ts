@@ -4,6 +4,7 @@ import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { categoryService } from "@/services";
 import { categoryCreateSchema, categoryUpdateSchema, type CategoryCreateInput, type CategoryUpdateInput } from "@/lib/validations/category.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
+import { revalidatePath } from "next/cache";
 
 export async function createCategoryAction(data: CategoryCreateInput) {
   try {
@@ -21,6 +22,7 @@ export async function createCategoryAction(data: CategoryCreateInput) {
       session.user.name
     );
 
+    revalidatePath("/dashboard/categorias");
     return { success: true, data: category, message: "Categoría creada exitosamente" };
   } catch (error) {
     return {
@@ -66,6 +68,7 @@ export async function updateCategoryAction(id: string, data: Partial<CategoryUpd
       session.user.name
     );
 
+    revalidatePath("/dashboard/categorias");
     return { success: true, data: category, message: "Categoría actualizada exitosamente" };
   } catch (error) {
     return {
@@ -90,6 +93,7 @@ export async function deleteCategoryAction(id: string) {
       session.user.name
     );
 
+    revalidatePath("/dashboard/categorias");
     return { success: true, data: result, message: "Categoría eliminada exitosamente" };
   } catch (error) {
     return {
@@ -99,3 +103,21 @@ export async function deleteCategoryAction(id: string) {
   }
 }
 
+export async function getCategoryByIdAction(id: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "No autorizado" };
+    }
+
+    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+
+    const category = await categoryService.getCategoryById(parseInt(id, 10));
+    return { success: true, data: category };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}

@@ -22,7 +22,7 @@ interface QuoteFormProps {
   products: Array<{
     id: number;
     nombre: string;
-    precioMinorista: number;
+    precio: number;
   }>;
   onSuccess: () => void;
 }
@@ -88,7 +88,7 @@ export function QuoteForm({
             ? {
                 ...item,
                 cantidad: newQuantity,
-                subtotal: product.precioMinorista * newQuantity,
+                subtotal: product.precio * newQuantity,
               }
             : item,
         ),
@@ -100,8 +100,8 @@ export function QuoteForm({
           productoId: product.id,
           cantidad,
           productoNombre: product.nombre,
-          precioUnitario: product.precioMinorista,
-          subtotal: product.precioMinorista * cantidad,
+          precioUnitario: product.precio,
+          subtotal: product.precio * cantidad,
         },
       ]);
     }
@@ -256,7 +256,7 @@ export function QuoteForm({
                 <option value="">Seleccionar producto</option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.nombre} - ${product.precioMinorista}
+                    {product.nombre} - ${product.precio}
                   </option>
                 ))}
               </select>

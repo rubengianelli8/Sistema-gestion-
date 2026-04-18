@@ -46,6 +46,7 @@ export enum Permission {
   COMPRAS_VER = "compras:ver",
   COMPRAS_CREAR = "compras:crear",
   COMPRAS_RECIBIR = "compras:recibir",
+  COMPRAS_ANULAR = "compras:anular",
 }
 
 // Mapeo de roles a permisos
@@ -81,6 +82,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     Permission.COMPRAS_VER,
     Permission.COMPRAS_CREAR,
     Permission.COMPRAS_RECIBIR,
+    Permission.COMPRAS_ANULAR,
   ],
   [UserRole.ADMIN]: [
     // Admin tiene todos los permisos
@@ -114,6 +116,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     Permission.COMPRAS_VER,
     Permission.COMPRAS_CREAR,
     Permission.COMPRAS_RECIBIR,
+    Permission.COMPRAS_ANULAR,
   ],
   [UserRole.VENDEDOR]: [
     Permission.PRODUCTOS_VER,
@@ -140,6 +143,7 @@ const rolePermissions: Record<UserRole, Permission[]> = {
     Permission.COMPRAS_VER,
     Permission.COMPRAS_CREAR,
     Permission.COMPRAS_RECIBIR,
+    Permission.COMPRAS_ANULAR,
   ],
   [UserRole.REPOSITOR]: [
     Permission.PRODUCTOS_VER,

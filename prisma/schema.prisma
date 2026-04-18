@@ -127,6 +127,7 @@ model Product {
   codigoBarras     String?   @unique
   categoriaId      Int?
   imagenUrl        String?
+  precio           Float     @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   stock            Int       @default(0)

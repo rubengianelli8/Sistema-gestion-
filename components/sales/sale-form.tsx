@@ -27,7 +27,7 @@ interface SaleFormProps {
     nombre: string;
     imagenUrl?: string | null;
     codigoBarras?: string | null;
-    precioMinorista: number;
+    precio: number;
     stockActual: number;
   }>;
   onSuccess: () => void;
@@ -114,8 +114,8 @@ export function SaleForm({
             cantidad: 1,
             productoNombre: product.nombre,
             imagenUrl: product.imagenUrl,
-            precioUnitario: product.precioMinorista,
-            subtotal: product.precioMinorista,
+            precioUnitario: product.precio,
+            subtotal: product.precio,
           },
         ];
       });
@@ -166,7 +166,7 @@ export function SaleForm({
             ? {
                 ...item,
                 cantidad: newQuantity,
-                subtotal: product.precioMinorista * newQuantity,
+                subtotal: product.precio * newQuantity,
               }
             : item,
         ),
@@ -179,8 +179,8 @@ export function SaleForm({
           cantidad,
           productoNombre: product.nombre,
           imagenUrl: product.imagenUrl,
-          precioUnitario: product.precioMinorista,
-          subtotal: product.precioMinorista * cantidad,
+          precioUnitario: product.precio,
+          subtotal: product.precio * cantidad,
         },
       ]);
     }
@@ -385,7 +385,7 @@ export function SaleForm({
                   {availableProducts.map((product) => (
                     <option key={product.id} value={product.id}>
                       {product.nombre} - Stock: {product.stockActual} - $
-                      {product.precioMinorista}
+                      {product.precio}
                     </option>
                   ))}
                 </select>

@@ -32,6 +32,12 @@ export const productCreateYupSchema = yup.object({
     .integer("El stock mínimo debe ser un número entero")
     .min(0, "El stock mínimo debe ser mayor o igual a 0")
     .default(0),
+  precio: yup
+    .number()
+    .typeError("El precio debe ser un número")
+    .min(0, "El precio debe ser mayor o igual a 0")
+    .required("El precio es requerido")
+    .default(0),
   supplierPrices: yup.array(supplierPriceSchema).default([]),
 });
 
