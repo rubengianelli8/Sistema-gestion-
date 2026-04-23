@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { saleService } from "@/services";
 import {
@@ -31,13 +32,13 @@ export async function createSaleAction(data: SaleCreateInput) {
           throw new Error(`Producto con ID ${item.productoId} no encontrado`);
         }
 
-        if (1 < item.cantidad) {
+        if (product.stock < item.cantidad) {
           throw new Error(
-            `Stock insuficiente para ${product.nombre}. Stock disponible: 1`,
+            `Stock insuficiente para ${product.nombre}. Stock disponible: ${product.stock}, solicitado: ${item.cantidad}`,
           );
         }
 
-        const precioUnitario = 0;
+        const precioUnitario = product.precio ?? 0;
         const subtotal = precioUnitario * item.cantidad;
 
         return {
@@ -88,6 +89,28 @@ export async function getAllSalesAction() {
 
     const sales = await saleService.getAllSales();
     return { success: true, data: sales };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error desconocido",
+    };
+  }
+}
+
+export async function cancelSaleAction(id: number) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { success: false, error: "No autorizado" };
+    }
+
+    requirePermission(session.user.rol, Permission.VENTAS_ANULAR);
+
+    const sale = await saleService.cancelSale(id);
+    revalidatePath("/dashboard/ventas");
+    revalidatePath("/dashboard/productos");
+
+    return { success: true, data: sale };
   } catch (error) {
     return {
       success: false,

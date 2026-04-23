@@ -135,24 +135,45 @@
     margin: 10mm;
   }
 
-  /* Solo se imprime el contenido marcado como etiqueta (puede estar anidado en el layout) */
-  body * {
-    visibility: hidden;
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
   }
-  .print-area,
-  .print-area * {
+
+  body > *:not(.print-sheet) {
+    display: none !important;
+  }
+
+  .print-sheet,
+  .print-sheet * {
     visibility: visible;
   }
+
   .print-area {
+    position: static !important;
     display: block;
-    position: absolute;
-    left: 0;
-    top: 0;
     width: 100%;
   }
+
+  .barcode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8mm;
+  }
+
   .barcode-cell {
     break-inside: avoid;
     page-break-inside: avoid;
+  }
+}
+
+@media screen {
+  .print-sheet {
+    display: none;
   }
 }
 

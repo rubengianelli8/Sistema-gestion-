@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SaleForm } from "./sale-form";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SaleStatus } from "@prisma/client";
+import { cn } from "@/lib/utils";
+import { CancelSaleButton } from "@/components/sales/cancel-sale-button";
 
 interface Sale {
   id: number;
@@ -13,6 +14,7 @@ interface Sale {
   total: number;
   metodoPago: string;
   fecha: Date;
+  estado: SaleStatus;
   cliente: {
     nombre: string;
   } | null;
@@ -20,31 +22,30 @@ interface Sale {
 
 interface SalesTableProps {
   sales: Sale[];
-  customers: Array<{ id: number; nombre: string }>;
-  products: Array<{
-    id: number;
-    nombre: string;
-    imagenUrl?: string | null;
-    codigoBarras?: string | null;
-    precio: number;
-    stockActual: number;
-  }>;
+  canAnular: boolean;
 }
 
-export function SalesTable({ sales: initialSales, customers, products }: SalesTableProps) {
-  const router = useRouter();
-  const [sales] = useState(initialSales);
-  const [formOpen, setFormOpen] = useState(false);
+function estadoBadge(estado: SaleStatus) {
+  switch (estado) {
+    case SaleStatus.COMPLETADA:
+      return { label: "Completada", className: "bg-emerald-100 text-emerald-800" };
+    case SaleStatus.PENDIENTE:
+      return { label: "Pendiente", className: "bg-gray-100 text-gray-800" };
+    case SaleStatus.ANULADA:
+      return { label: "Anulada", className: "bg-red-100 text-red-800" };
+    default:
+      return { label: String(estado), className: "bg-gray-100 text-gray-800" };
+  }
+}
 
-  const handleFormSuccess = () => {
-    router.refresh();
-  };
+export function SalesTable({ sales, canAnular }: SalesTableProps) {
+  const router = useRouter();
 
   return (
     <>
       <div className="mb-4 flex justify-between items-center">
         <h1 className="text-2xl font-bold">Ventas</h1>
-        <Button onClick={() => setFormOpen(true)}>
+        <Button onClick={() => router.push("/dashboard/ventas/new")}>
           <Plus className="w-4 h-4 mr-2" />
           Nueva Venta
         </Button>
@@ -60,51 +61,71 @@ export function SalesTable({ sales: initialSales, customers, products }: SalesTa
               <th className="border border-gray-300 px-4 py-2 text-left">Vendedor</th>
               <th className="border border-gray-300 px-4 py-2 text-left">Método de Pago</th>
               <th className="border border-gray-300 px-4 py-2 text-left">Total</th>
+              <th className="border border-gray-300 px-4 py-2 text-left">Estado</th>
+              <th className="border border-gray-300 px-4 py-2 text-left">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {sales.length === 0 ? (
               <tr>
-                <td colSpan={6} className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                <td
+                  colSpan={8}
+                  className="border border-gray-300 px-4 py-8 text-center text-gray-500"
+                >
                   No hay ventas registradas
                 </td>
               </tr>
             ) : (
-              sales.map((sale) => (
-                <tr key={sale.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-4 py-2">#{sale.id}</td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {new Date(sale.fecha).toLocaleDateString("es-AR", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">
-                    {sale.cliente?.nombre || "Sin cliente"}
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2">{sale.vendedorNombre}</td>
-                  <td className="border border-gray-300 px-4 py-2">{sale.metodoPago}</td>
-                  <td className="border border-gray-300 px-4 py-2 font-semibold">
-                    ${sale.total.toFixed(2)}
-                  </td>
-                </tr>
-              ))
+              sales.map((sale) => {
+                const badge = estadoBadge(sale.estado);
+                return (
+                  <tr key={sale.id} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 px-4 py-2">#{sale.id}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {new Date(sale.fecha).toLocaleDateString("es-AR", {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {sale.cliente?.nombre || "Sin cliente"}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {sale.vendedorNombre}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {sale.metodoPago}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 font-semibold">
+                      ${sale.total.toFixed(2)}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-md px-2 py-0.5 text-xs font-medium",
+                          badge.className,
+                        )}
+                      >
+                        {badge.label}
+                      </span>
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      <CancelSaleButton
+                        saleId={sale.id}
+                        estado={sale.estado}
+                        canAnular={canAnular}
+                      />
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
-
-      <SaleForm
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        customers={customers}
-        products={products}
-        onSuccess={handleFormSuccess}
-      />
     </>
   );
 }
-

@@ -1,9 +1,11 @@
 import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { getAllSalesAction } from "@/app/actions/sale.actions";
-import { getAllCustomersAction } from "@/app/actions/customer.actions";
-import { getAllProductsAction } from "@/app/actions/product.actions";
 import { redirect } from "next/navigation";
-import { requirePermission, Permission } from "@/lib/permissions";
+import {
+  requirePermission,
+  Permission,
+  hasPermission,
+} from "@/lib/permissions";
 import { SalesTable } from "@/components/sales/sales-table";
 
 export default async function VentasPage() {
@@ -19,11 +21,7 @@ export default async function VentasPage() {
     redirect("/dashboard");
   }
 
-  const [salesResult, customersResult, productsResult] = await Promise.all([
-    getAllSalesAction(),
-    getAllCustomersAction(),
-    getAllProductsAction(),
-  ]);
+  const salesResult = await getAllSalesAction();
 
   if (!salesResult.success) {
     return (
@@ -34,6 +32,11 @@ export default async function VentasPage() {
     );
   }
 
+  const canAnular = hasPermission(
+    session.user.rol,
+    Permission.VENTAS_ANULAR,
+  );
+
   const sales = (salesResult.data || []).map((s) => ({
     id: s.id,
     clienteId: s.clienteId,
@@ -41,23 +44,13 @@ export default async function VentasPage() {
     total: s.total,
     metodoPago: String(s.metodoPago),
     fecha: s.fecha,
+    estado: s.estado,
     cliente: s.cliente ? { nombre: s.cliente.nombre } : null,
   }));
-  const customers = customersResult.success ? customersResult.data || [] : [];
-  const products = productsResult.success
-    ? (productsResult.data || []).map((product) => ({
-        id: product.id,
-        nombre: product.nombre,
-        imagenUrl: product.imagenUrl,
-        codigoBarras: product.codigoBarras ?? null,
-        precio: product.precio ?? 0,
-        stockActual: product.stock,
-      }))
-    : [];
 
   return (
     <div className="p-6">
-      <SalesTable sales={sales} customers={customers} products={products} />
+      <SalesTable sales={sales} canAnular={canAnular} />
     </div>
   );
 }

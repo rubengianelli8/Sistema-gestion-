@@ -1,20 +1,47 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import { Sidebar } from "./sidebar";
 import { Menu } from "lucide-react";
+
+const SIDEBAR_COLLAPSED_KEY = "sidebar:collapsed";
 
 interface DashboardShellProps {
   children: ReactNode;
   headerContent: ReactNode;
 }
 
-export function DashboardShell({ children, headerContent }: DashboardShellProps) {
+export function DashboardShell({
+  children,
+  headerContent,
+}: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const skipNextPersist = useRef(true);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    if (saved !== null) {
+      setCollapsed(saved === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
+  }, [collapsed]);
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={() => setCollapsed((v) => !v)}
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header con botón hamburguesa en mobile */}
@@ -22,6 +49,7 @@ export function DashboardShell({ children, headerContent }: DashboardShellProps)
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden p-2 rounded-md text-gray-500 hover:bg-gray-100"
                 aria-label="Abrir menú"

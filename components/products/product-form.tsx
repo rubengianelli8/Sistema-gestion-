@@ -131,6 +131,21 @@ export function ProductForm({
   });
   const imageUrl = watch("imagenUrl");
   const codigoBarrasWatch = watch("codigoBarras");
+  const precioVentaWatch = watch("precio");
+  const supplierPricesWatch = watch("supplierPrices");
+
+  const formatDiferencia = (
+    precioVenta: unknown,
+    precioProveedor: unknown,
+  ): string | null => {
+    const venta = Number(precioVenta);
+    const compra = Number(precioProveedor);
+    if (!Number.isFinite(venta) || !Number.isFinite(compra)) return null;
+    if (venta <= 0 || compra <= 0) return null;
+    const diff = venta - compra;
+    const signo = diff >= 0 ? "+" : "-";
+    return `${signo}$${Math.abs(diff).toFixed(2)}`;
+  };
 
   const onSubmit = handleSubmit(async (data) => {
     setServerError(null);
@@ -345,7 +360,7 @@ export function ProductForm({
                       {fields.map((field, index) => (
                         <div
                           key={field.id}
-                          className="grid grid-cols-1 sm:grid-cols-[1fr_140px_160px_auto] gap-3 items-end p-3 rounded-lg border bg-muted/20"
+                          className="grid grid-cols-1 sm:grid-cols-[1fr_200px_160px_auto] gap-3 items-end p-3 rounded-lg border bg-muted/20"
                         >
                           <div className="space-y-1">
                             <Label
@@ -380,16 +395,39 @@ export function ProductForm({
                             <Label htmlFor={`supplierPrices.${index}.precio`}>
                               Precio ($)
                             </Label>
-                            <Input
-                              id={`supplierPrices.${index}.precio`}
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              {...register(
-                                `supplierPrices.${index}.precio` as const,
-                              )}
-                            />
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Input
+                                id={`supplierPrices.${index}.precio`}
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                className="min-w-0 flex-1"
+                                {...register(
+                                  `supplierPrices.${index}.precio` as const,
+                                )}
+                              />
+                              {(() => {
+                                const diff = formatDiferencia(
+                                  precioVentaWatch,
+                                  supplierPricesWatch?.[index]?.precio,
+                                );
+                                if (!diff) return null;
+                                const isNegative = diff.startsWith("-");
+                                return (
+                                  <span
+                                    className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium ${
+                                      isNegative
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-emerald-100 text-emerald-700"
+                                    }`}
+                                    title="Ganancia vs precio de venta"
+                                  >
+                                    {diff}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                             {errors.supplierPrices?.[index]?.precio && (
                               <p className="text-xs text-red-600">
                                 {errors.supplierPrices[index]?.precio?.message}
