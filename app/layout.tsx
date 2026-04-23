@@ -3,8 +3,13 @@ import { Toaster } from "sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Sistema de Gestión",
-  description: "Sistema de gestión para ferretería",
+  title: "Venta Agil",
+  description: "Sistema de gestión de stock y POS para negocios",
+  icons: {
+    icon: "/favicon.jpeg",
+    shortcut: "/favicon.jpeg",
+    apple: "/favicon.jpeg",
+  },
 };
 
 export default function RootLayout({
@@ -21,4 +26,3 @@ export default function RootLayout({
     </html>
   );
 }
-

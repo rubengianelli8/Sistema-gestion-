@@ -3,10 +3,17 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,7 +51,17 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="text-2xl">Sistema de Gestión</CardTitle>
+          <CardTitle className="sr-only">Venta Agil</CardTitle>
+          <div className="flex justify-center">
+            <Image
+              src="/logo.png"
+              alt="Venta Agil"
+              width={320}
+              height={78}
+              className="h-16 w-auto object-contain"
+              priority
+            />
+          </div>
           <CardDescription>
             Ingresa tus credenciales para acceder
           </CardDescription>
@@ -56,7 +73,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@ferreteria.com"
+                placeholder="admin@mail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -74,9 +91,7 @@ export default function LoginPage() {
                 disabled={loading}
               />
             </div>
-            {error && (
-              <div className="text-sm text-red-600">{error}</div>
-            )}
+            {error && <div className="text-sm text-red-600">{error}</div>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Iniciando sesión..." : "Iniciar sesión"}
             </Button>
@@ -86,4 +101,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

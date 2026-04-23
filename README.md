@@ -1,6 +1,6 @@
-# Sistema de Gestión - Ferretería
+# Venta Agil
 
-Sistema de gestión integral para ferreterías construido con Next.js 16, TypeScript, Prisma y PostgreSQL.
+Sistema de gestión integral para negocios construido con Next.js 16, TypeScript, Prisma y PostgreSQL.
 
 ## Stack Tecnológico
 

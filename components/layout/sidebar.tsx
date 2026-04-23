@@ -48,13 +48,13 @@ function SidebarAside({
   return (
     <aside
       className={cn(
-        "bg-white border-r border-gray-200 flex flex-col h-full transition-[width] duration-200 ease-in-out",
+        "bg-sidebar border-r border-sidebar-border text-sidebar-foreground flex flex-col h-full transition-[width] duration-200 ease-in-out",
         collapsed ? "w-16" : "w-64",
       )}
     >
       <div
         className={cn(
-          "border-b border-gray-200 flex items-center gap-2 shrink-0",
+          "flex items-center gap-2 shrink-0",
           collapsed ? "p-2 justify-center" : "p-4 justify-end",
         )}
       >
@@ -63,7 +63,7 @@ function SidebarAside({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden lg:inline-flex p-1 rounded-md text-gray-500 hover:bg-gray-100"
+              className="hidden lg:inline-flex p-1 rounded-md text-muted-foreground hover:bg-accent"
               aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
             >
               {collapsed ? (
@@ -77,7 +77,7 @@ function SidebarAside({
             <button
               type="button"
               onClick={onClose}
-              className="lg:hidden p-1 rounded-md text-gray-500 hover:bg-gray-100"
+              className="lg:hidden p-1 rounded-md text-muted-foreground hover:bg-accent"
               aria-label="Cerrar menú"
             >
               <X className="w-5 h-5" />
@@ -109,8 +109,8 @@ function SidebarAside({
                   ? "justify-center px-2 py-2 gap-0"
                   : "gap-3 px-3 py-2",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-gray-700 hover:bg-gray-100",
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
               <Icon className="w-5 h-5 shrink-0" />
@@ -121,13 +121,18 @@ function SidebarAside({
           );
         })}
       </nav>
-      <div className={cn("border-t border-gray-200", collapsed ? "p-2" : "p-4")}>
+      <div
+        className={cn(
+          "border-t border-sidebar-border",
+          collapsed ? "p-2" : "p-4",
+        )}
+      >
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/login" })}
           title={collapsed ? "Cerrar sesión" : undefined}
           className={cn(
-            "flex items-center rounded-md text-gray-700 hover:bg-gray-100 w-full",
+            "flex items-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground w-full",
             collapsed
               ? "justify-center px-2 py-2 gap-0"
               : "gap-3 px-3 py-2",
