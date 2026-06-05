@@ -14,6 +14,8 @@ import { SupplierRepository } from "@/repositories/supplier.repository";
 import { SupplierService } from "./supplier.service";
 import { PurchaseRepository } from "@/repositories/purchase.repository";
 import { PurchaseService } from "./purchase.service";
+import { DashboardRepository } from "@/repositories/dashboard.repository";
+import { DashboardService } from "./dashboard.service";
 
 // Repositories
 export const userRepository = new UserRepository();
@@ -24,6 +26,7 @@ export const saleRepository = new SaleRepository();
 export const quoteRepository = new QuoteRepository();
 export const supplierRepository = new SupplierRepository();
 export const purchaseRepository = new PurchaseRepository();
+export const dashboardRepository = new DashboardRepository();
 
 // Services
 export const userService = new UserService(userRepository);
@@ -34,4 +37,5 @@ export const saleService = new SaleService(saleRepository);
 export const quoteService = new QuoteService(quoteRepository);
 export const supplierService = new SupplierService(supplierRepository);
 export const purchaseService = new PurchaseService(purchaseRepository);
+export const dashboardService = new DashboardService(dashboardRepository);
 
