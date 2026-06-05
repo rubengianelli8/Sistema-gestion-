@@ -47,8 +47,8 @@ export function DashboardShell({
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header con botón hamburguesa en mobile */}
         <header className="bg-card border-b border-border px-4 lg:px-6 py-4 shrink-0">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-4 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
@@ -62,15 +62,15 @@ export function DashboardShell({
                 alt="Venta Agil"
                 width={280}
                 height={68}
-                className="h-10 w-auto object-contain"
+                className="h-10 w-auto max-w-[min(100%,12rem)] sm:max-w-none object-contain"
                 priority
               />
             </div>
-            {headerContent}
+            <div className="shrink-0">{headerContent}</div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">{children}</main>
       </div>
     </div>
   );

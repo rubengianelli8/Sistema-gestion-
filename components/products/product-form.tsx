@@ -200,21 +200,22 @@ export function ProductForm({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={onSubmit} className="min-h-screen bg-muted/30">
+      <form onSubmit={onSubmit} className="min-h-screen min-w-0 bg-muted/30 overflow-x-hidden">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b px-6 py-4">
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+        <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 sm:px-6 sm:py-4">
+          <div className="max-w-6xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 min-w-0">
+            <div className="flex min-w-0 items-start gap-2 sm:items-center sm:gap-3">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/dashboard/productos")}
+                className="shrink-0"
               >
                 ← Volver
               </Button>
-              <div>
-                <h1 className="text-xl font-semibold">
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-semibold leading-tight">
                   {isEdit ? "Editar Producto" : "Nuevo Producto"}
                 </h1>
                 <p className="text-sm text-muted-foreground">
@@ -224,16 +225,21 @@ export function ProductForm({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.push("/dashboard/productos")}
                 disabled={isSubmitting}
+                className="flex-1 sm:flex-none"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex-1 sm:flex-none"
+              >
                 {isSubmitting
                   ? "Guardando..."
                   : isEdit
@@ -245,7 +251,7 @@ export function ProductForm({
         </div>
 
         {/* Contenido */}
-        <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="max-w-6xl mx-auto px-4 py-6 sm:px-6 min-w-0">
           {serverError && (
             <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {serverError}
@@ -291,8 +297,8 @@ export function ProductForm({
                     placeholder="Ej: 7790040123456"
                   />
                   {codigoBarrasWatch?.trim() ? (
-                    <div className="space-y-2">
-                      <div className="rounded-md border border-border bg-muted/30 p-3 inline-block">
+                    <div className="space-y-2 max-w-full overflow-hidden">
+                      <div className="rounded-md border border-border bg-muted/30 p-3 inline-block max-w-full overflow-x-auto">
                         <Barcode value={codigoBarrasWatch.trim()} />
                       </div>
                     </div>
@@ -319,8 +325,8 @@ export function ProductForm({
               {/* Precios por proveedor */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
                       <CardTitle className="text-base">
                         Precios por Proveedor
                       </CardTitle>
@@ -340,6 +346,7 @@ export function ProductForm({
                         })
                       }
                       disabled={suppliers.length === 0}
+                      className="w-full sm:w-auto shrink-0"
                     >
                       + Agregar proveedor
                     </Button>

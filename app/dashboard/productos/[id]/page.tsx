@@ -45,13 +45,11 @@ export default async function EditarProductoPage({
   const units = unitsResult.success ? (unitsResult.data ?? []) : [];
 
   return (
-    <div className="p-6">
-      <ProductForm
-        product={productResult.data}
-        categories={categories}
-        suppliers={suppliers}
-        units={units}
-      />
-    </div>
+    <ProductForm
+      product={productResult.data}
+      categories={categories}
+      suppliers={suppliers}
+      units={units}
+    />
   );
 }

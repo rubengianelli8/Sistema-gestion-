@@ -42,6 +42,14 @@ export class ProductService {
     return await this.repository.search(query);
   }
 
+  async searchProductsForSale(query: string) {
+    return await this.repository.searchForSale(query);
+  }
+
+  async getProductByBarcode(codigoBarras: string) {
+    return await this.repository.findByBarcode(codigoBarras);
+  }
+
   async updateProduct(id: number, data: UpdateProductDto, currentUserId: number, currentUserName: string) {
     const exists = await this.repository.exists(id);
     if (!exists) {

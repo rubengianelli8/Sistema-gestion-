@@ -1,12 +1,17 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createSaleAction } from "@/app/actions/sale.actions";
+import {
+  createSaleAction,
+  lookupProductByBarcodeForSaleAction,
+  searchProductsForSaleAction,
+  type SaleProductDto,
+} from "@/app/actions/sale.actions";
 import { toast } from "sonner";
 import { PaymentMethod } from "@prisma/client";
 import { ArrowLeft, Camera, Minus, Plus, Trash2, X } from "lucide-react";
@@ -18,15 +23,6 @@ interface Customer {
   nombre: string;
 }
 
-interface Product {
-  id: number;
-  nombre: string;
-  imagenUrl?: string | null;
-  codigoBarras?: string | null;
-  precio: number;
-  stockActual: number;
-}
-
 interface SaleItem {
   productoId: number;
   cantidad: number;
@@ -34,14 +30,14 @@ interface SaleItem {
   imagenUrl?: string | null;
   precioUnitario: number;
   subtotal: number;
+  stockActual: number;
 }
 
 interface SalePageFormProps {
   customers: Customer[];
-  products: Product[];
 }
 
-export function SalePageForm({ customers, products }: SalePageFormProps) {
+export function SalePageForm({ customers }: SalePageFormProps) {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -52,33 +48,66 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
   );
   const [notas, setNotas] = useState("");
   const [items, setItems] = useState<SaleItem[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const [selectedProduct, setSelectedProduct] = useState<SaleProductDto | null>(
+    null,
+  );
   const [selectedQuantity, setSelectedQuantity] = useState<string>("1");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SaleProductDto[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [scanValue, setScanValue] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
 
-  const addByBarcode = useCallback(
-    (raw: string) => {
-      const code = raw.trim();
-      if (!code) return;
-      const product = products.find((p) => (p.codigoBarras ?? "") === code);
-      if (!product) {
-        toast.error(`No se encontró un producto con código ${code}`);
-        return;
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const result = await searchProductsForSaleAction(q);
+        if (cancelled) return;
+        if (result.success && result.data) {
+          setSearchResults(result.data);
+        } else {
+          setSearchResults([]);
+        }
+      } finally {
+        if (!cancelled) setSearchLoading(false);
       }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchQuery]);
+
+  const addProductToCart = useCallback(
+    (product: SaleProductDto, cantidad: number) => {
       if (product.stockActual <= 0) {
         toast.error(`Sin stock: ${product.nombre}`);
-        return;
+        return false;
       }
+
+      let added = false;
       setItems((prev) => {
         const existing = prev.find((i) => i.productoId === product.id);
-        const nextQty = (existing?.cantidad ?? 0) + 1;
+        const nextQty = (existing?.cantidad ?? 0) + cantidad;
         if (product.stockActual < nextQty) {
           toast.error(
             `Stock insuficiente. Disponible: ${product.stockActual}`,
           );
           return prev;
         }
+
+        added = true;
         if (existing) {
           return prev.map((i) =>
             i.productoId === product.id
@@ -94,18 +123,49 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
           ...prev,
           {
             productoId: product.id,
-            cantidad: 1,
+            cantidad,
             productoNombre: product.nombre,
             imagenUrl: product.imagenUrl,
             precioUnitario: product.precio,
-            subtotal: product.precio,
+            subtotal: product.precio * cantidad,
+            stockActual: product.stockActual,
           },
         ];
       });
-      toast.success(`Agregado: ${product.nombre}`);
-      setError(null);
+      return added;
     },
-    [products],
+    [],
+  );
+
+  const addByBarcode = useCallback(
+    async (raw: string) => {
+      const code = raw.trim();
+      if (!code || barcodeLoading) return;
+
+      setBarcodeLoading(true);
+      try {
+        const result = await lookupProductByBarcodeForSaleAction(code);
+        if (!result.success || !result.data) {
+          toast.error(
+            result.error ?? `No se encontró un producto con código ${code}`,
+          );
+          return;
+        }
+
+        if (result.data.stockActual <= 0) {
+          toast.error(`Sin stock: ${result.data.nombre}`);
+          return;
+        }
+
+        if (addProductToCart(result.data, 1)) {
+          toast.success(`Agregado: ${result.data.nombre}`);
+          setError(null);
+        }
+      } finally {
+        setBarcodeLoading(false);
+      }
+    },
+    [addProductToCart, barcodeLoading],
   );
 
   const handleScannerDetected = useCallback(
@@ -116,13 +176,10 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
   );
 
   const handleAddProduct = () => {
-    if (!selectedProductId) {
-      setError("Debe seleccionar un producto");
+    if (!selectedProduct) {
+      setError("Debe seleccionar un producto de la búsqueda");
       return;
     }
-
-    const product = products.find((p) => p.id === parseInt(selectedProductId));
-    if (!product) return;
 
     const cantidad = parseInt(selectedQuantity) || 1;
     if (cantidad <= 0) {
@@ -130,46 +187,13 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
       return;
     }
 
-    if (product.stockActual < cantidad) {
-      setError(`Stock insuficiente. Disponible: ${product.stockActual}`);
-      return;
+    if (addProductToCart(selectedProduct, cantidad)) {
+      setSelectedProduct(null);
+      setSearchQuery("");
+      setSearchResults([]);
+      setSelectedQuantity("1");
+      setError(null);
     }
-
-    const existingItem = items.find((item) => item.productoId === product.id);
-    if (existingItem) {
-      const newQuantity = existingItem.cantidad + cantidad;
-      if (product.stockActual < newQuantity) {
-        setError(`Stock insuficiente. Disponible: ${product.stockActual}`);
-        return;
-      }
-      setItems(
-        items.map((item) =>
-          item.productoId === product.id
-            ? {
-                ...item,
-                cantidad: newQuantity,
-                subtotal: product.precio * newQuantity,
-              }
-            : item,
-        ),
-      );
-    } else {
-      setItems([
-        ...items,
-        {
-          productoId: product.id,
-          cantidad,
-          productoNombre: product.nombre,
-          imagenUrl: product.imagenUrl,
-          precioUnitario: product.precio,
-          subtotal: product.precio * cantidad,
-        },
-      ]);
-    }
-
-    setSelectedProductId("");
-    setSelectedQuantity("1");
-    setError(null);
   };
 
   const handleRemoveItem = (productoId: number) => {
@@ -185,11 +209,8 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
     const item = items.find((i) => i.productoId === productoId);
     if (!item) return;
 
-    const product = products.find((p) => p.id === productoId);
-    if (!product) return;
-
-    if (product.stockActual < newQuantity) {
-      toast.error(`Stock insuficiente. Disponible: ${product.stockActual}`);
+    if (item.stockActual < newQuantity) {
+      toast.error(`Stock insuficiente. Disponible: ${item.stockActual}`);
       return;
     }
 
@@ -208,10 +229,6 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
   };
 
   const total = items.reduce((sum, item) => sum + item.subtotal, 0);
-  const selectedProduct = products.find(
-    (p) => p.id === Number(selectedProductId),
-  );
-  const availableProducts = products.filter((p) => p.stockActual > 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -359,11 +376,16 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addByBarcode(scanValue);
+                    void addByBarcode(scanValue);
                     setScanValue("");
                   }
                 }}
-                placeholder="Escaneá con lector USB o escribí y Enter"
+                placeholder={
+                  barcodeLoading
+                    ? "Buscando producto..."
+                    : "Escaneá con lector USB o escribí y Enter"
+                }
+                disabled={barcodeLoading}
                 autoComplete="off"
                 autoFocus
                 className="h-11 text-base"
@@ -384,29 +406,78 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
                 Buscar producto manualmente
               </summary>
               <div className="px-3 pb-3 pt-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="shrink-0">
-                    <ImagePreview
-                      url={selectedProduct?.imagenUrl}
-                      alt={
-                        selectedProduct?.nombre || "Producto sin seleccionar"
-                      }
-                    />
-                  </div>
-                  <select
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="flex-1 min-w-0 h-10 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm"
-                  >
-                    <option value="">Seleccionar producto</option>
-                    {availableProducts.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.nombre} - Stock: {product.stockActual} - $
-                        {product.precio}
-                      </option>
-                    ))}
-                  </select>
+                <div className="space-y-1">
+                  <Label htmlFor="productSearch">Buscar por nombre o código</Label>
+                  <Input
+                    id="productSearch"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setSelectedProduct(null);
+                    }}
+                    placeholder="Mínimo 2 caracteres..."
+                    className="h-10"
+                    autoComplete="off"
+                  />
                 </div>
+
+                {searchLoading && (
+                  <p className="text-xs text-muted-foreground">Buscando...</p>
+                )}
+
+                {!searchLoading &&
+                  searchQuery.trim().length >= 2 &&
+                  searchResults.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Sin resultados con stock disponible.
+                    </p>
+                  )}
+
+                {searchResults.length > 0 && (
+                  <ul className="max-h-48 overflow-y-auto rounded-md border divide-y">
+                    {searchResults.map((product) => (
+                      <li key={product.id}>
+                        <button
+                          type="button"
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-muted/50 ${
+                            selectedProduct?.id === product.id
+                              ? "bg-primary/10"
+                              : ""
+                          }`}
+                          onClick={() => setSelectedProduct(product)}
+                        >
+                          <span className="font-medium">{product.nombre}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            — Stock: {product.stockActual} — $
+                            {product.precio.toFixed(2)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {selectedProduct && (
+                  <div className="flex items-center gap-2 rounded-md border bg-background p-2">
+                    <div className="shrink-0">
+                      <ImagePreview
+                        url={selectedProduct.imagenUrl}
+                        alt={selectedProduct.nombre}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 text-sm">
+                      <p className="font-medium truncate">
+                        {selectedProduct.nombre}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Stock: {selectedProduct.stockActual} — $
+                        {selectedProduct.precio.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Input
                     type="number"
@@ -419,6 +490,7 @@ export function SalePageForm({ customers, products }: SalePageFormProps) {
                   <Button
                     type="button"
                     onClick={handleAddProduct}
+                    disabled={!selectedProduct}
                     className="h-10 flex-1 sm:flex-none"
                   >
                     <Plus className="w-4 h-4 mr-2" />

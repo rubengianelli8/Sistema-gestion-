@@ -100,6 +100,31 @@ export class ProductRepository {
     });
   }
 
+  async searchForSale(query: string, limit = 20) {
+    const q = query.trim();
+    if (!q) return [];
+
+    return await this.prisma.product.findMany({
+      where: {
+        stock: { gt: 0 },
+        OR: [
+          { nombre: { contains: q } },
+          { codigoBarras: { contains: q } },
+        ],
+      },
+      select: {
+        id: true,
+        nombre: true,
+        imagenUrl: true,
+        codigoBarras: true,
+        precio: true,
+        stock: true,
+      },
+      orderBy: { nombre: "asc" },
+      take: limit,
+    });
+  }
+
   async update(id: number, data: UpdateProductDto) {
     return await this.prisma.product.update({
       where: { id },
