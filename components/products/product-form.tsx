@@ -340,7 +340,7 @@ export function ProductForm({
                       size="sm"
                       onClick={() =>
                         append({
-                          proveedorId: 0,
+                          proveedorId: undefined as unknown as number,
                           precio: 0,
                           codigoProveedor: "",
                         })
@@ -369,34 +369,12 @@ export function ProductForm({
                           key={field.id}
                           className="grid grid-cols-1 sm:grid-cols-[1fr_200px_160px_auto] gap-3 items-end p-3 rounded-lg border bg-muted/20"
                         >
-                          <div className="space-y-1">
-                            <Label
-                              htmlFor={`supplierPrices.${index}.proveedorId`}
-                            >
-                              Proveedor
-                            </Label>
-                            <select
-                              id={`supplierPrices.${index}.proveedorId`}
-                              {...register(
-                                `supplierPrices.${index}.proveedorId` as const,
-                              )}
-                              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                            >
-                              {supplierOptions.map((o) => (
-                                <option key={o.value} value={o.value}>
-                                  {o.label}
-                                </option>
-                              ))}
-                            </select>
-                            {errors.supplierPrices?.[index]?.proveedorId && (
-                              <p className="text-xs text-red-600">
-                                {
-                                  errors.supplierPrices[index]?.proveedorId
-                                    ?.message
-                                }
-                              </p>
-                            )}
-                          </div>
+                          <RhfSelect
+                            name={`supplierPrices.${index}.proveedorId`}
+                            label="Proveedor"
+                            options={supplierOptions}
+                            valueAs="number"
+                          />
 
                           <div className="space-y-1">
                             <Label htmlFor={`supplierPrices.${index}.precio`}>
@@ -486,11 +464,13 @@ export function ProductForm({
                     name="categoriaId"
                     label="Categoría"
                     options={categoryOptions}
+                    valueAs="nullableNumber"
                   />
                   <RhfSelect
                     name="unitId"
                     label="Unidad de medida"
                     options={unitOptions}
+                    valueAs="nullableNumber"
                   />
                 </CardContent>
               </Card>

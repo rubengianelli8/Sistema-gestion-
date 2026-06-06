@@ -1,31 +1,32 @@
 import * as yup from "yup";
+import { requiredSelectString } from "@/lib/validations/yup-helpers";
 
 export const userCreateYupSchema = yup.object({
-  name: yup.string().required("El nombre es requerido"),
+  name: yup.string().required("El nombre es obligatorio"),
   email: yup
     .string()
-    .email("Email inválido")
-    .required("El email es requerido"),
+    .email("Ingresá un email válido")
+    .required("El email es obligatorio"),
   password: yup
     .string()
     .min(6, "La contraseña debe tener al menos 6 caracteres")
-    .required("La contraseña es requerida"),
-  rol: yup.string().required("El rol es requerido"),
+    .required("La contraseña es obligatoria"),
+  rol: requiredSelectString("Seleccioná un rol"),
   branchId: yup.string().optional(),
 });
 
 export const userUpdateYupSchema = yup.object({
-  name: yup.string().required("El nombre es requerido"),
+  name: yup.string().required("El nombre es obligatorio"),
   email: yup
     .string()
-    .email("Email inválido")
-    .required("El email es requerido"),
+    .email("Ingresá un email válido")
+    .required("El email es obligatorio"),
   password: yup
     .string()
     .transform((value) => (value === "" ? undefined : value))
     .min(6, "La contraseña debe tener al menos 6 caracteres")
     .optional(),
-  rol: yup.string().required("El rol es requerido"),
+  rol: requiredSelectString("Seleccioná un rol"),
   branchId: yup.string().optional(),
 });
 
