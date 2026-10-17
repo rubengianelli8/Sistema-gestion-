@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Dialog,
@@ -28,12 +27,6 @@ export function BarcodeSheetDialog({
   onOpenChange,
   items,
 }: BarcodeSheetDialogProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const printSheet = (
     <div className="print-area print-sheet">
       <div className="barcode-grid">
@@ -59,15 +52,19 @@ export function BarcodeSheetDialog({
           <DialogHeader>
             <DialogTitle>Imprimir etiquetas ({items.length})</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {items.map((it, i) => (
               <div
                 key={`${it.codigoBarras}-${i}`}
                 className="border border-border rounded-md p-4 text-center space-y-2"
               >
-                <p className="font-semibold text-sm leading-tight">{it.nombre}</p>
-                <div className="flex justify-center">
-                  <Barcode value={it.codigoBarras} height={60} />
+                <p className="break-words font-semibold text-sm leading-tight">{it.nombre}</p>
+                <div className="flex max-w-full justify-center overflow-x-auto">
+                  <Barcode
+                    value={it.codigoBarras}
+                    height={60}
+                    className="h-auto max-w-full"
+                  />
                 </div>
               </div>
             ))}
@@ -82,7 +79,9 @@ export function BarcodeSheetDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {mounted && open && createPortal(printSheet, document.body)}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(printSheet, document.body)}
     </>
   );
 }

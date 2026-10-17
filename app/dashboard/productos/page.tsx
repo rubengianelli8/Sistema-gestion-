@@ -42,7 +42,7 @@ export default async function ProductosPage({
 
   if (!result.success || !result.data) {
     return (
-      <div className="p-6">
+      <div className="min-w-0 p-3 sm:p-6">
         <h1 className="text-2xl font-bold mb-4">Productos</h1>
         <p className="text-red-600">Error: {result.error}</p>
       </div>
@@ -56,9 +56,9 @@ export default async function ProductosPage({
   );
 
   return (
-    <div className="p-6">
+    <div className="min-w-0 p-3 sm:p-6">
       <ProductsTable
-        products={products as any}
+        products={products}
         page={page}
         pageSize={pageSize}
         total={total}

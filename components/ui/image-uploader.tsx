@@ -48,13 +48,13 @@ export function ImageUploader({ value, onChange }: ImageUploaderProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 flex-col items-start gap-3 min-[360px]:flex-row">
         <ImagePreview
           url={value}
           alt="Imagen del producto"
           thumbClassName="w-16 h-16 object-cover rounded border"
         />
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
