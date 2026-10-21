@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Dialog,
@@ -28,12 +27,6 @@ export function BarcodeDialog({
   onOpenChange,
   product,
 }: BarcodeDialogProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   if (!product) return null;
 
   const printSheet = (
@@ -53,13 +46,17 @@ export function BarcodeDialog({
           <DialogHeader>
             <DialogTitle>Código de barras</DialogTitle>
           </DialogHeader>
-          <div className="text-center space-y-3">
-            <p className="font-semibold">{product.nombre}</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="min-w-0 space-y-3 text-center">
+            <p className="break-words font-semibold">{product.nombre}</p>
+            <p className="break-all text-sm text-muted-foreground">
               {product.codigoBarras}
             </p>
-            <div className="flex justify-center">
-              <Barcode value={product.codigoBarras} height={80} />
+            <div className="flex max-w-full justify-center overflow-x-auto">
+              <Barcode
+                value={product.codigoBarras}
+                height={80}
+                className="h-auto max-w-full"
+              />
             </div>
           </div>
           <DialogFooter>
@@ -72,7 +69,9 @@ export function BarcodeDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      {mounted && open && createPortal(printSheet, document.body)}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(printSheet, document.body)}
     </>
   );
 }

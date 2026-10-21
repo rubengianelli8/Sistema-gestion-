@@ -13,6 +13,7 @@ import { ImagePreview } from "@/components/ui/image-preview";
 import { BarcodeDialog } from "@/components/products/barcode-dialog";
 import { BarcodeSheetDialog } from "@/components/products/barcode-sheet-dialog";
 import { toast } from "sonner";
+import { Pagination } from "@/components/ui/pagination";
 
 interface Product {
   id: number;
@@ -228,7 +229,7 @@ export function ProductsTable({
   };
 
   const renderActions = (product: Product) => (
-    <div className="flex gap-2">
+    <div className="flex flex-wrap gap-2">
       {product.codigoBarras ? (
         <Button
           variant="outline"
@@ -240,6 +241,7 @@ export function ProductsTable({
             if (!code) return;
             setBarcodeProduct({ nombre: product.nombre, codigoBarras: code });
           }}
+          aria-label={`Ver código de barras de ${product.nombre}`}
         >
           <Barcode className="w-4 h-4" />
         </Button>
@@ -248,6 +250,7 @@ export function ProductsTable({
         variant="outline"
         size="sm"
         onClick={() => router.push(`/dashboard/productos/${product.id}`)}
+        aria-label={`Editar ${product.nombre}`}
       >
         <Pencil className="w-4 h-4" />
       </Button>
@@ -255,6 +258,7 @@ export function ProductsTable({
         variant="destructive"
         size="sm"
         onClick={() => handleDeleteRequest(product.id)}
+        aria-label={`Eliminar ${product.nombre}`}
       >
         <Trash2 className="w-4 h-4" />
       </Button>
@@ -263,14 +267,15 @@ export function ProductsTable({
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap justify-between items-center gap-2">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Productos</h1>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap sm:justify-end">
           {canCreatePurchase ? (
             <Button
               variant="outline"
               type="button"
               onClick={() => router.push("/dashboard/compras/new")}
+              className="w-full sm:w-auto"
             >
               <ShoppingCart className="w-4 h-4 mr-2" />
               Nueva compra
@@ -281,18 +286,22 @@ export function ProductsTable({
             type="button"
             disabled={bulkPrintItems.length === 0}
             onClick={() => setSheetOpen(true)}
+            className="w-full sm:w-auto"
           >
             <Printer className="w-4 h-4 mr-2" />
             Imprimir etiquetas ({bulkPrintItems.length})
           </Button>
-          <Button onClick={() => router.push("/dashboard/productos/new")}>
+          <Button
+            onClick={() => router.push("/dashboard/productos/new")}
+            className="w-full min-[420px]:col-span-2 sm:col-span-1 sm:w-auto"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Agregar Producto
           </Button>
         </div>
       </div>
 
-      <div className="mb-3 relative max-w-md">
+      <div className="relative mb-3 w-full sm:max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <Input
           value={query}
@@ -302,15 +311,98 @@ export function ProductsTable({
         />
       </div>
 
-      <DataTable
-        columns={columns}
-        data={products}
-        emptyMessage="No hay productos registrados"
-        actions={renderActions}
-        page={page}
-        pageSize={pageSize}
-        total={total}
-      />
+      <div className="hidden lg:block">
+        <DataTable
+          columns={columns}
+          data={products}
+          emptyMessage="No hay productos registrados"
+          actions={renderActions}
+          page={page}
+          pageSize={pageSize}
+          total={total}
+        />
+      </div>
+
+      <div className="lg:hidden">
+        {products.length === 0 ? (
+          <div className="rounded-lg border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow">
+            No hay productos registrados
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {selectableIds.length > 0 ? (
+              <label className="flex items-center gap-2 rounded-lg border bg-card px-4 py-3 text-sm font-medium shadow-sm">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="cursor-pointer"
+                />
+                Seleccionar todos los productos con código
+              </label>
+            ) : null}
+
+            {products.map((product) => (
+              <article
+                key={product.id}
+                className="min-w-0 rounded-lg border bg-card p-4 shadow-sm"
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  {product.codigoBarras ? (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(product.id)}
+                      onChange={() => toggleOne(product.id)}
+                      aria-label={`Seleccionar ${product.nombre}`}
+                      className="mt-4 shrink-0 cursor-pointer"
+                    />
+                  ) : null}
+                  <ImagePreview
+                    url={product.imagenUrl}
+                    alt={product.nombre}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h2 className="break-words font-semibold leading-tight">
+                      {product.nombre}
+                    </h2>
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Precio</p>
+                        <p className="font-medium">
+                          {typeof product.precio === "number"
+                            ? `$${product.precio.toFixed(2)}`
+                            : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Stock</p>
+                        <p className="font-medium">
+                          {product.stockActual ?? product.stock ?? "-"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 min-w-0 border-t pt-3">
+                  <p className="text-xs text-muted-foreground">
+                    Código de barras
+                  </p>
+                  <p className="break-all text-sm">
+                    {product.codigoBarras ?? "-"}
+                  </p>
+                </div>
+
+                <div className="mt-3 flex justify-end">
+                  {renderActions(product)}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+
+        <Pagination page={page} pageSize={pageSize} total={total} />
+      </div>
 
       <ConfirmDialog
         open={confirmOpen}
