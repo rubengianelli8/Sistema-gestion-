@@ -1,5 +1,7 @@
 # Reconciliación de migraciones Prisma para MySQL
 
+> Actualización del 29/10/2026: el baseline fue autorizado, generado y verificado. La sección 8 registra el resultado vigente. Las secciones de diagnóstico conservan el estado observado el 26/10/2026 y el historial de la decisión; no describen la cadena activa actual.
+
 - Fecha del diagnóstico: 2026-10-26
 - Rama: `chore/reconciliar-migraciones-mysql`
 - Base local inspeccionada: `corralon` en `localhost:3306`
@@ -288,7 +290,7 @@ La justificación es:
 
 ### Supuestos y condiciones
 
-- Se asume únicamente que `prisma/schema.prisma` representa la intención actual del código; esto deberá ser confirmado por el equipo.
+- El equipo aprobó `prisma/schema.prisma` como estado actual de referencia para el baseline el 29/10/2026.
 - No se asume que la base local esté vacía. `TABLE_ROWS = 0` es solo metadata estimada.
 - El inventario de ambientes conocidos está completo al 26/10/2026.
 - Solo existen bases descartables de desarrollo.
@@ -296,7 +298,7 @@ La justificación es:
 - No se identificaron ambientes compartidos con migraciones aplicadas que obliguen a conservar el historial actual como cadena activa.
 - El baseline no debería incluir todavía cambios multicliente no implementados. Primero debe representar fielmente un estado actual aprobado; luego los cambios de tenancy deben entrar como migraciones posteriores.
 
-La elección de estrategia no autoriza todavía su implementación. Las migraciones actuales deben permanecer intactas hasta que se apruebe y ejecute una tarea posterior específica. El baseline deberá generarse y probarse primero en una base MySQL descartable. Si en el futuro se descubre un ambiente no inventariado con migraciones registradas, la estrategia deberá reevaluarse para ese ambiente.
+La implementación se autorizó en una tarea específica el 29/10/2026 y se probó exclusivamente en `corralon_baseline_test`; ver sección 8. Si en el futuro se descubre un ambiente no inventariado con migraciones registradas, la estrategia deberá reevaluarse para ese ambiente.
 
 ## Decisiones confirmadas del equipo
 
@@ -306,13 +308,13 @@ La elección de estrategia no autoriza todavía su implementación. Las migracio
 4. No hay datos productivos que deban conservarse, migrarse o backfillearse.
 5. La estrategia elegida es crear un baseline MySQL nuevo y canónico.
 6. Toda generación y aplicación futura del baseline se probará primero en una base MySQL descartable.
-7. El baseline no se implementa como parte de este documento y las migraciones actuales permanecen sin cambios.
+7. El diagnóstico original no modificó migraciones. La tarea autorizada del 29/10/2026 reemplazó la cadena activa y agregó la evidencia de la sección 8.
+8. El schema actual está aprobado como referencia y `User.email` conserva su unicidad global.
+9. Se conserva el modelo físico generado por Prisma, sin renombres ni cambios multicliente.
 
 ## Decisiones pendientes del equipo
 
-1. Confirmar si `prisma/schema.prisma` está aprobado como estado de referencia.
-2. Decidir si el email de usuario será global o podrá repetirse entre negocios.
-3. Definir qué sistema operativo y configuración de casing tendrá el futuro servidor.
+1. Definir el sistema operativo y `lower_case_table_names` del futuro servidor. El baseline conserva los nombres generados por Prisma y la sección 8 documenta ambos comportamientos.
 
 ## 6. Plan de implementación posterior
 
@@ -417,4 +419,78 @@ El baseline se considerará terminado únicamente cuando se cumplan todos estos 
 
 El schema actual es válido y la base local está estructuralmente cerca de él, pero el historial de migraciones no describe cómo reconstruir esa base en MySQL. La ausencia de `_prisma_migrations`, combinada con una migración inicial PostgreSQL y una segunda migración MySQL, obliga a tratar la situación como una reconciliación de baseline, no como una simple migración correctiva.
 
-El inventario de ambientes ya está completo y no hay datos productivos que conservar. La estrategia elegida es un baseline MySQL nuevo, pero todavía no debe implementarse. La siguiente acción segura es resolver las decisiones pendientes, aprobar el estado de referencia y, en una tarea posterior autorizada, generar y ensayar el baseline exclusivamente sobre una base MySQL descartable antes de adoptarlo.
+El inventario de ambientes está completo y no hay datos productivos que conservar. El 29/10/2026 se implementó la estrategia autorizada y se verificó desde cero exclusivamente sobre una base MySQL descartable. La base `corralon` no fue reconciliada ni modificada; la evidencia se registra a continuación.
+
+## 8. Baseline MySQL implementado y verificado (2026-10-29)
+
+### Alcance y cadena activa
+
+- Rama: `chore/construir-baseline-mysql`.
+- Estado de referencia aprobado: `prisma/schema.prisma`, sin modificaciones.
+- Única migración activa: `prisma/migrations/20261029000000_mysql_baseline/migration.sql`.
+- `migration_lock.toml` conserva `provider = "mysql"`, sin modificaciones.
+- Se retiraron de la cadena activa `20260219232706_update_client_fields/migration.sql` y `20260417120000_add_product_precio/migration.sql`.
+- Su contenido permanece en Git, por ejemplo en el commit de referencia `e0ee4cbb4df607a3ec3415e8d3f6c804972bc29b`, además del diagnóstico histórico de este documento. No se guardaron copias dentro de la cadena activa.
+- Se conservaron las 16 tablas, tipos, enums, defaults, índices y 24 claves foráneas del schema. Incluye `Product.precio`, `SUPERADMIN`, `User.businessId` nullable y `User.email` globalmente único. No incorpora funcionalidad multicliente nueva.
+
+### Generación
+
+Se utilizó Node.js 22.22.1 y el Prisma CLI local 7.4.0 ya instalado. Se consultó su ayuda de `migrate diff`, `migrate deploy` y `migrate status` antes de ejecutar cambios. Los tres comandos de ayuda terminaron con código 0.
+
+El SQL fue generado mediante el CLI; solo se normalizó a un salto de línea final, sin cambios a sus sentencias:
+
+```text
+node node_modules/prisma/build/index.js migrate diff --from-empty --to-schema prisma/schema.prisma --script
+```
+
+La salida estándar se guardó en el archivo de baseline como UTF-8; la salida de diagnóstico de Prisma no se incluyó en el SQL. Código de salida: 0. La generación usó una URL temporal de proceso para la base descartable, aunque esta comparación entre schema y estado vacío no consulta la base.
+
+### Verificación reproducible y protecciones
+
+El comando versionado de verificación es:
+
+```text
+node scripts/verify-mysql-baseline.cjs
+```
+
+Requiere que el llamador proporcione `DATABASE_URL` exclusivamente al proceso, con destino `corralon_baseline_test` en el servidor MySQL local. No carga `.env`, no acepta otros nombres de base ni servidores remotos, y rechaza opciones adicionales de URL. Las credenciales deben suministrarse por el entorno sin imprimirlas ni incorporarlas a argumentos o archivos versionados.
+
+Para el ensayo local se leyeron las credenciales existentes en memoria, se sustituyó el nombre de la base antes de iniciar el proceso hijo y solo se pasó a ese hijo la URL descartable. No se cambió el entorno del proceso padre ni `.env`. La variable temporal desapareció al terminar el hijo.
+
+El verificador consulta primero `information_schema` y se detiene si la base de prueba ya existe, sin alterarla ni eliminarla. Valida el schema antes de crearla. Crea exactamente `corralon_baseline_test` con `utf8mb4` / `utf8mb4_unicode_ci`, ejecuta deploy, status y diff, y comprueba tablas y metadatos. La limpieza está en un bloque `finally`: solo elimina la base si fue creada por esa misma ejecución y verifica que ya no exista. No ejecuta reset, resolve, migrate dev ni db push.
+
+### Evidencia local
+
+Servidor: MySQL 8.0.46, `lower_case_table_names = 1`. Resultado global del verificador: código 0.
+
+| Verificación | Código | Resultado |
+| --- | ---: | --- |
+| Comprobación inicial de existencia | 0 | La base de prueba no existía |
+| `prisma validate` | 0 | Schema válido |
+| Creación de la base descartable | 0 | Vacía, con charset/collation explícitos |
+| `prisma migrate deploy` | 0 | Una migración aplicada desde cero |
+| `prisma migrate status` | 0 | Database schema is up to date |
+| `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code` | 0 | No difference detected; sin drift |
+| Comprobación de tablas y metadatos | 0 | 16 tablas de dominio, 24 claves foráneas y tabla de historial |
+| Eliminación y comprobación de ausencia de la base de prueba | 0 | Base eliminada por la misma ejecución que la creó |
+| Revisión estática del SQL | 0 | Sin CREATE TYPE, SERIAL ni DOUBLE PRECISION; invariantes verificadas |
+| `node --check scripts/verify-mysql-baseline.cjs` | 0 | Sintaxis válida |
+| Parseo YAML y estructura del workflow mediante js-yaml existente | 0 | Sintaxis y estructura esperada válidas |
+
+Tablas observadas: `business`, `branch`, `user`, `category`, `product`, `client`, `sale`, `saleitem`, `quote`, `quoteitem`, `supplier`, `supplierprice`, `purchase`, `purchaseitem`, `tax`, `unit`; además de `_prisma_migrations`. Se verificaron InnoDB, collation de las tablas de dominio, precio por defecto, enum SUPERADMIN, businessId nullable, índice único de email y cantidad de claves foráneas. La equivalencia completa de la estructura soportada por Prisma se verificó mediante migrate diff, no solo contando tablas.
+
+### Casing y CI
+
+El SQL conserva literalmente los nombres PascalCase que genera Prisma, por ejemplo `Business`, `Product` y `SaleItem`; no se agregaron `@@map` ni renombres. En el MySQL local sobre Windows, `lower_case_table_names = 1` almacena los nombres de tablas en minúsculas y las consultas no distinguen su casing. El ensayo local produjo nombres en minúsculas y Prisma no detectó drift.
+
+Con `lower_case_table_names = 0`, habitual en Linux, los nombres se conservan y distinguen mayúsculas/minúsculas. Las consultas SQL manuales deben respetar exactamente los nombres generados. La elección de configuración del futuro servidor sigue pendiente; no se cambió ninguna configuración del servidor local.
+
+El workflow `.github/workflows/mysql-baseline.yml` usa un servicio MySQL 8.0.46 descartable en Ubuntu, Node 22.22.1 y `npm ci` para instalar las versiones del lockfile en el runner. Usa credenciales públicas exclusivas de ese contenedor efímero, sin secretos del repositorio ni conexión a otras bases. Ejecuta el mismo verificador al cambiar Prisma, dependencias, el script o el propio workflow, y permite ejecución manual. En el servicio Linux se espera `lower_case_table_names = 0`; el verificador informa el valor real y verifica los nombres según ese valor.
+
+El YAML fue validado localmente con un parser ya instalado. La ejecución remota de GitHub Actions y el ensayo sobre Linux quedan pendientes del próximo push/PR; no se realizaron commit ni push y no se presenta esa ejecución como ya aprobada. No se instalaron ni actualizaron dependencias en el equipo local.
+
+### Bases existentes y siguientes cambios
+
+`corralon` no fue modificada ni recibió migraciones. Este baseline reconstruye una base vacía; no reconcilia automáticamente bases de desarrollo ya existentes. No se ejecutó `migrate resolve` ni se marcó nada como aplicado en ellas. Cualquier reconstrucción o reconciliación de esas bases requiere una tarea separada.
+
+Los cambios multicliente deben agregarse mediante migraciones posteriores y revisables. El script contiene comprobaciones específicas de este estado de 16 tablas; si se amplía el schema, esas comprobaciones también deberán actualizarse conscientemente. No se requiere backfill ni rollback de datos reales bajo el inventario confirmado.
