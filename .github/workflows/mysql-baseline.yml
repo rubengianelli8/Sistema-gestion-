@@ -1,0 +1,52 @@
+name: MySQL baseline
+
+on:
+  pull_request:
+    paths:
+      - 'prisma/**'
+      - 'prisma.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/verify-mysql-baseline.cjs'
+      - '.github/workflows/mysql-baseline.yml'
+  push:
+    paths:
+      - 'prisma/**'
+      - 'prisma.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'scripts/verify-mysql-baseline.cjs'
+      - '.github/workflows/mysql-baseline.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      mysql:
+        image: mysql:8.0.46
+        env:
+          MYSQL_ROOT_PASSWORD: baseline_ci_disposable
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    env:
+      DATABASE_URL: mysql://root:baseline_ci_disposable@127.0.0.1:3306/corralon_baseline_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.1
+          cache: npm
+      - run: npm ci
+      - run: node --check scripts/verify-mysql-baseline.cjs
+      - run: node scripts/verify-mysql-baseline.cjs
