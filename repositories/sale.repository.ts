@@ -1,13 +1,14 @@
 import prisma from "@/lib/prisma";
+import type { PaymentMethod } from "@prisma/client";
 
 export interface CreateSaleDto {
   clienteId?: number;
   vendedorId: number;
   vendedorNombre?: string;
   total: number;
-  metodoPago: string;
+  metodoPago: PaymentMethod;
   notas?: string;
-  branchId?: number;
+  branchId: number;
   items: {
     productoId: number;
     productoNombre?: string;
@@ -30,9 +31,9 @@ export class SaleRepository {
         clienteId: data.clienteId,
         vendedorId: data.vendedorId,
         total: data.total,
-        metodoPago: data.metodoPago as any,
+        metodoPago: data.metodoPago,
         notas: data.notas,
-        branchId: data.branchId ?? 1,
+        branchId: data.branchId,
         items: {
           create: data.items.map((item) => ({
             productoId: item.productoId,

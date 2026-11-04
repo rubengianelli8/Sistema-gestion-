@@ -1,67 +1,68 @@
 import { CategoryRepository, CreateCategoryDto, UpdateCategoryDto } from "@/repositories/category.repository";
 import prisma from "@/lib/prisma";
+import { assertBusinessContext, TenantError, type BusinessContext } from "@/lib/tenant-context";
 
 export class CategoryService {
   constructor(private readonly repository: CategoryRepository) {}
 
-  async createCategory(data: CreateCategoryDto, currentUserId: number, currentUserName: string) {
-    const nameExists = await this.repository.nameExists(data.nombre);
+  async createCategory(context: BusinessContext, data: CreateCategoryDto) {
+    const nameExists = await this.repository.nameExists(context, data.nombre);
     if (nameExists) {
-      throw new Error("Ya existe una categoría con ese nombre");
+      throw new TenantError("Ya existe una categoría con ese nombre");
     }
 
-    const category = await this.repository.create(data);
+    const category = await this.repository.create(context, data);
 
     return category;
   }
 
-  async getAllCategories() {
-    return await this.repository.findAll();
+  async getAllCategories(context: BusinessContext) {
+    return await this.repository.findAll(context);
   }
 
-  async getCategoryById(id: number) {
-    const category = await this.repository.findById(id);
+  async getCategoryById(context: BusinessContext, id: number) {
+    const category = await this.repository.findById(context, id);
     if (!category) {
-      throw new Error("Categoría no encontrada");
+      throw new TenantError("Categoría no encontrada");
     }
     return category;
   }
 
-  async updateCategory(id: number, data: UpdateCategoryDto, currentUserId: number, currentUserName: string) {
-    const exists = await this.repository.exists(id);
+  async updateCategory(context: BusinessContext, id: number, data: UpdateCategoryDto) {
+    const exists = await this.repository.exists(context, id);
     if (!exists) {
-      throw new Error("Categoría no encontrada");
+      throw new TenantError("Categoría no encontrada");
     }
 
     if (data.nombre) {
-      const nameExists = await this.repository.nameExists(data.nombre, id);
+      const nameExists = await this.repository.nameExists(context, data.nombre, id);
       if (nameExists) {
-        throw new Error("Ya existe una categoría con ese nombre");
+        throw new TenantError("Ya existe una categoría con ese nombre");
       }
     }
 
-    const category = await this.repository.update(id, data);
+    const category = await this.repository.update(context, id, data);
 
     return category;
   }
 
-  async deleteCategory(id: number, currentUserId: number, currentUserName: string) {
-    const exists = await this.repository.exists(id);
+  async deleteCategory(context: BusinessContext, id: number) {
+    assertBusinessContext(context);
+    const exists = await this.repository.exists(context, id);
     if (!exists) {
-      throw new Error("Categoría no encontrada");
+      throw new TenantError("Categoría no encontrada");
     }
 
     const productsCount = await prisma.product.count({
-      where: { categoriaId: id },
+      // Also block legacy cross-business references, avoiding ON DELETE SET NULL on an unrelated product.
+      where: { categoriaId: id, categoria: { businessId: context.businessId } },
     });
 
     if (productsCount > 0) {
-      throw new Error(
-        `No se puede eliminar. La categoría está siendo usada por ${productsCount} producto(s)`
-      );
+      throw new TenantError("No se puede eliminar una categoría en uso");
     }
 
-    await this.repository.delete(id);
+    await this.repository.delete(context, id);
 
     return { message: "Categoría eliminada exitosamente" };
   }

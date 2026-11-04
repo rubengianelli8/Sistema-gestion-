@@ -2,15 +2,17 @@ import { PurchaseRepository } from "@/repositories/purchase.repository";
 import prisma from "@/lib/prisma";
 import type { PurchaseCreateInput } from "@/lib/validations/purchase.schema";
 import { PurchaseStatus } from "@prisma/client";
+import { productScope, TenantError, type BranchContext } from "@/lib/tenant-context";
 
 export class PurchaseService {
   constructor(private readonly repository: PurchaseRepository) {}
 
   async createPurchase(
     data: PurchaseCreateInput,
-    _userId: number,
-    branchId: number,
+    context: BranchContext,
   ) {
+    const scope = productScope(context);
+    const branchId = context.branchId;
     const supplier = await prisma.supplier.findUnique({
       where: { id: data.proveedorId },
     });
@@ -19,19 +21,14 @@ export class PurchaseService {
     }
 
     const products = await prisma.product.findMany({
-      where: { id: { in: data.items.map((i) => i.productoId) } },
+      where: { id: { in: data.items.map((i) => i.productoId) }, ...scope },
     });
     const byId = new Map(products.map((p) => [p.id, p]));
 
     for (const item of data.items) {
       const product = byId.get(item.productoId);
       if (!product) {
-        throw new Error(`Producto ${item.productoId} no encontrado`);
-      }
-      if (product.branchId !== branchId) {
-        throw new Error(
-          `El producto "${product.nombre}" no pertenece a la sucursal actual`,
-        );
+        throw new TenantError("Producto no encontrado");
       }
     }
 

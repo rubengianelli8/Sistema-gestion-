@@ -1,31 +1,25 @@
 "use server";
 
 import { auth } from "@/app/api/auth/[...nextauth]/route";
-import { quoteService } from "@/services";
+import { quoteService, productService } from "@/services";
 import {
   quoteCreateSchema,
   type QuoteCreateInput,
 } from "@/lib/validations/quote.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
-import prisma from "@/lib/prisma";
+import { requireBranchContext, tenantActionError } from "@/lib/tenant-context";
 
 export async function createQuoteAction(data: QuoteCreateInput) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
-
-    requirePermission(session.user.rol, Permission.PRESUPUESTOS_CREAR);
+    const context = await requireBranchContext();
+    requirePermission(context.rol, Permission.PRESUPUESTOS_CREAR);
 
     const validatedData = quoteCreateSchema.parse(data);
 
     // Obtener información de productos y calcular totales
     const items = await Promise.all(
       validatedData.items.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productoId },
-        });
+        const product = await productService.getProductById(context, item.productoId);
 
         if (!product) {
           throw new Error(`Producto con ID ${item.productoId} no encontrado`);
@@ -48,8 +42,8 @@ export async function createQuoteAction(data: QuoteCreateInput) {
 
     const quoteData = {
       clienteId: validatedData.clienteId,
-      vendedorId: parseInt(session.user.id),
-      vendedorNombre: session.user.name,
+      vendedorId: context.userId,
+      vendedorNombre: context.userName,
       total,
       validezDias: validatedData.validezDias,
       notas: validatedData.notas,
@@ -58,8 +52,8 @@ export async function createQuoteAction(data: QuoteCreateInput) {
 
     const quote = await quoteService.createQuote(
       quoteData,
-      parseInt(session.user.id),
-      session.user.name,
+      context.userId,
+      context.userName,
     );
 
     return {
@@ -70,7 +64,7 @@ export async function createQuoteAction(data: QuoteCreateInput) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }

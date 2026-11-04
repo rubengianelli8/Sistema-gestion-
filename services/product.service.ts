@@ -1,80 +1,90 @@
 import { ProductRepository, CreateProductDto, UpdateProductDto } from "@/repositories/product.repository";
+import prisma from "@/lib/prisma";
+import { productScope, TenantError, type BranchContext } from "@/lib/tenant-context";
 
 export class ProductService {
   constructor(private readonly repository: ProductRepository) {}
 
-  async createProduct(data: CreateProductDto, currentUserId: number, currentUserName: string) {
+  private async validateCategory(context: BranchContext, categoriaId?: number | null) {
+    productScope(context);
+    if (categoriaId == null) return;
+    const category = await prisma.category.findFirst({
+      where: { id: categoriaId, businessId: context.businessId }, select: { id: true },
+    });
+    if (!category) throw new TenantError("Categoría no encontrada");
+  }
+
+  async createProduct(context: BranchContext, data: CreateProductDto) {
+    await this.validateCategory(context, data.categoriaId);
     if (data.codigoBarras) {
-      const barcodeExists = await this.repository.barcodeExists(data.codigoBarras);
+      const barcodeExists = await this.repository.barcodeExists(context, data.codigoBarras);
       if (barcodeExists) {
-        throw new Error("Ya existe un producto con ese código de barras");
+        throw new TenantError("Ya existe un producto con ese código de barras");
       }
     }
 
-    const product = await this.repository.create(data);
+    const product = await this.repository.create(context, data);
 
     return product;
   }
 
-  async getAllProducts() {
-    return await this.repository.findAll();
+  async getAllProducts(context: BranchContext) {
+    return await this.repository.findAll(context);
   }
 
-  async getPaginatedProducts(params: {
+  async getPaginatedProducts(context: BranchContext, params: {
     q?: string;
     page: number;
     pageSize: number;
   }) {
     const { q, page, pageSize } = params;
     const skip = (Math.max(1, page) - 1) * pageSize;
-    return await this.repository.findPaginated({ q, skip, take: pageSize });
+    return await this.repository.findPaginated(context, { q, skip, take: pageSize });
   }
 
-  async getProductById(id: number) {
-    const product = await this.repository.findById(id);
+  async getProductById(context: BranchContext, id: number) {
+    const product = await this.repository.findById(context, id);
     if (!product) {
-      throw new Error("Producto no encontrado");
+      throw new TenantError("Producto no encontrado");
     }
     return product;
   }
 
-  async searchProducts(query: string) {
-    return await this.repository.search(query);
+  async searchProducts(context: BranchContext, query: string) {
+    return await this.repository.search(context, query);
   }
 
-  async searchProductsForSale(query: string) {
-    return await this.repository.searchForSale(query);
+  async searchProductsForSale(context: BranchContext, query: string) {
+    return await this.repository.searchForSale(context, query);
   }
 
-  async getProductByBarcode(codigoBarras: string) {
-    return await this.repository.findByBarcode(codigoBarras);
+  async getProductByBarcode(context: BranchContext, codigoBarras: string) {
+    return await this.repository.findByBarcode(context, codigoBarras);
   }
 
-  async updateProduct(id: number, data: UpdateProductDto, currentUserId: number, currentUserName: string) {
-    const exists = await this.repository.exists(id);
-    if (!exists) {
-      throw new Error("Producto no encontrado");
-    }
+  async updateProduct(context: BranchContext, id: number, data: UpdateProductDto) {
+    const existing = await this.getProductById(context, id);
+    await this.validateCategory(context, data.categoriaId === undefined ? existing.categoriaId : data.categoriaId);
 
     if (data.codigoBarras) {
-      const barcodeExists = await this.repository.barcodeExists(data.codigoBarras, id);
+      const barcodeExists = await this.repository.barcodeExists(context, data.codigoBarras, id);
       if (barcodeExists) {
-        throw new Error("Ya existe un producto con ese código de barras");
+        throw new TenantError("Ya existe un producto con ese código de barras");
       }
     }
 
-    const product = await this.repository.update(id, data);
+    const product = await this.repository.update(context, id, data);
 
     return product;
   }
 
-  async deleteProduct(id: number, currentUserId: number, currentUserName: string) {
-    const exists = await this.repository.exists(id);
+  async deleteProduct(context: BranchContext, id: number) {
+    const exists = await this.repository.exists(context, id);
     if (!exists) {
-      throw new Error("Producto no encontrado");
+      throw new TenantError("Producto no encontrado");
     }
 
-    await this.repository.delete(id);
+    await this.repository.delete(context, id);
 
     return { message: "Producto eliminado exitosamente" };
   }

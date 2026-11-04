@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { requireBusinessContext, tenantActionError } from "@/lib/tenant-context";
 import { categoryService } from "@/services";
 import { categoryCreateSchema, categoryUpdateSchema, type CategoryCreateInput, type CategoryUpdateInput } from "@/lib/validations/category.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
@@ -8,18 +8,14 @@ import { revalidatePath } from "next/cache";
 
 export async function createCategoryAction(data: CategoryCreateInput) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBusinessContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_CREAR);
+    requirePermission(context.rol, Permission.PRODUCTOS_CREAR);
 
     const validatedData = categoryCreateSchema.parse(data);
     const category = await categoryService.createCategory(
+      context,
       validatedData,
-      parseInt(session.user.id),
-      session.user.name
     );
 
     revalidatePath("/dashboard/categorias");
@@ -27,45 +23,38 @@ export async function createCategoryAction(data: CategoryCreateInput) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function getAllCategoriesAction() {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBusinessContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+    requirePermission(context.rol, Permission.PRODUCTOS_VER);
 
-    const categories = await categoryService.getAllCategories();
+    const categories = await categoryService.getAllCategories(context);
     return { success: true, data: categories };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function updateCategoryAction(id: string, data: Partial<CategoryUpdateInput>) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBusinessContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_EDITAR);
+    requirePermission(context.rol, Permission.PRODUCTOS_EDITAR);
 
     const validatedData = categoryUpdateSchema.parse(data);
     const category = await categoryService.updateCategory(
+      context,
       parseInt(id),
       validatedData,
-      parseInt(session.user.id),
-      session.user.name
     );
 
     revalidatePath("/dashboard/categorias");
@@ -73,24 +62,20 @@ export async function updateCategoryAction(id: string, data: Partial<CategoryUpd
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function deleteCategoryAction(id: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBusinessContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_ELIMINAR);
+    requirePermission(context.rol, Permission.PRODUCTOS_ELIMINAR);
 
     const result = await categoryService.deleteCategory(
+      context,
       parseInt(id),
-      parseInt(session.user.id),
-      session.user.name
     );
 
     revalidatePath("/dashboard/categorias");
@@ -98,26 +83,23 @@ export async function deleteCategoryAction(id: string) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function getCategoryByIdAction(id: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBusinessContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+    requirePermission(context.rol, Permission.PRODUCTOS_VER);
 
-    const category = await categoryService.getCategoryById(parseInt(id, 10));
+    const category = await categoryService.getCategoryById(context, parseInt(id, 10));
     return { success: true, data: category };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
