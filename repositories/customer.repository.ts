@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { assertBusinessContext, type BusinessContext } from "@/lib/tenant-context";
 
 export interface CreateCustomerDto {
   nombre: string;
@@ -20,52 +21,66 @@ export interface UpdateCustomerDto {
 export class CustomerRepository {
   private prisma = prisma;
 
-  async create(data: CreateCustomerDto) {
-    return await this.prisma.client.create({ data: {...data, businessId: 1} });
+  async create(context: BusinessContext, data: CreateCustomerDto) {
+    assertBusinessContext(context);
+    return await this.prisma.client.create({ data: {
+      nombre: data.nombre, dni: data.dni, email: data.email || null,
+      telefono: data.telefono, direccion: data.direccion, businessId: context.businessId,
+    } });
   }
 
-  async findAll(includeInactive: boolean = false) {
+  async findAll(context: BusinessContext, includeInactive: boolean = false) {
+    assertBusinessContext(context);
     return await this.prisma.client.findMany({
-      where: includeInactive ? undefined : { activo: true },
+      where: { businessId: context.businessId, ...(includeInactive ? {} : { activo: true }) },
       orderBy: { createdAt: "desc" },
     });
   }
 
-  async findById(id: number) {
-    return await this.prisma.client.findUnique({
-      where: { id },
-    });
-  }
-
-  async findByDni(dni: string) {
+  async findById(context: BusinessContext, id: number) {
+    assertBusinessContext(context);
     return await this.prisma.client.findFirst({
-      where: { dni },
+      where: { id, businessId: context.businessId },
     });
   }
 
-  async findByEmail(email: string) {
-    return await this.prisma.client.findUnique({
-      where: { email },
+  async findByDni(context: BusinessContext, dni: string) {
+    assertBusinessContext(context);
+    return await this.prisma.client.findFirst({
+      where: { dni, businessId: context.businessId },
     });
   }
 
-  async update(id: number, data: UpdateCustomerDto) {
+  async findByEmail(context: BusinessContext, email: string) {
+    assertBusinessContext(context);
+    return await this.prisma.client.findFirst({
+      where: { email, businessId: context.businessId },
+    });
+  }
+
+  async update(context: BusinessContext, id: number, data: UpdateCustomerDto) {
+    assertBusinessContext(context);
     return await this.prisma.client.update({
-      where: { id },
-      data,
+      where: { id, businessId: context.businessId },
+      data: {
+        nombre: data.nombre, dni: data.dni, email: data.email === "" ? null : data.email,
+        telefono: data.telefono, direccion: data.direccion, activo: data.activo,
+      },
     });
   }
 
-  async delete(id: number) {
+  async delete(context: BusinessContext, id: number) {
+    assertBusinessContext(context);
     // Eliminación lógica
     return await this.prisma.client.update({
-      where: { id },
+      where: { id, businessId: context.businessId },
       data: { activo: false },
     });
   }
 
-  async exists(id: number): Promise<boolean> {
-    const count = await this.prisma.client.count({ where: { id } });
+  async exists(context: BusinessContext, id: number): Promise<boolean> {
+    assertBusinessContext(context);
+    const count = await this.prisma.client.count({ where: { id, businessId: context.businessId } });
     return count > 0;
   }
 }

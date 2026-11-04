@@ -8,7 +8,7 @@ import {
   type SaleCreateInput,
 } from "@/lib/validations/sale.schema";
 import { requirePermission, Permission } from "@/lib/permissions";
-import prisma from "@/lib/prisma";
+import { requireBranchContext, tenantActionError } from "@/lib/tenant-context";
 
 export type SaleProductDto = {
   id: number;
@@ -39,21 +39,15 @@ function toSaleProductDto(product: {
 
 export async function createSaleAction(data: SaleCreateInput) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
-
-    requirePermission(session.user.rol, Permission.VENTAS_CREAR);
+    const context = await requireBranchContext();
+    requirePermission(context.rol, Permission.VENTAS_CREAR);
 
     const validatedData = saleCreateSchema.parse(data);
 
     // Obtener información de productos y calcular totales
     const items = await Promise.all(
       validatedData.items.map(async (item) => {
-        const product = await prisma.product.findUnique({
-          where: { id: item.productoId },
-        });
+        const product = await productService.getProductById(context, item.productoId);
 
         if (!product) {
           throw new Error(`Producto con ID ${item.productoId} no encontrado`);
@@ -81,9 +75,10 @@ export async function createSaleAction(data: SaleCreateInput) {
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
 
     const saleData = {
+      branchId: context.branchId,
       clienteId: validatedData.clienteId,
-      vendedorId: parseInt(session.user.id),
-      vendedorNombre: session.user.name,
+      vendedorId: context.userId,
+      vendedorNombre: context.userName,
       total,
       metodoPago: validatedData.metodoPago,
       notas: validatedData.notas,
@@ -92,15 +87,15 @@ export async function createSaleAction(data: SaleCreateInput) {
 
     const sale = await saleService.createSale(
       saleData,
-      parseInt(session.user.id),
-      session.user.name,
+      context.userId,
+      context.userName,
     );
 
     return { success: true, data: sale, message: "Venta creada exitosamente" };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
@@ -148,19 +143,16 @@ export async function cancelSaleAction(id: number) {
 
 export async function searchProductsForSaleAction(query: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.VENTAS_CREAR);
+    requirePermission(context.rol, Permission.VENTAS_CREAR);
 
     const q = query.trim();
     if (q.length < 2) {
       return { success: true, data: [] as SaleProductDto[] };
     }
 
-    const products = await productService.searchProductsForSale(q);
+    const products = await productService.searchProductsForSale(context, q);
     return {
       success: true,
       data: products.map(toSaleProductDto),
@@ -168,26 +160,23 @@ export async function searchProductsForSaleAction(query: string) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function lookupProductByBarcodeForSaleAction(barcode: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.VENTAS_CREAR);
+    requirePermission(context.rol, Permission.VENTAS_CREAR);
 
     const code = barcode.trim();
     if (!code) {
       return { success: false, error: "Código de barras vacío" };
     }
 
-    const product = await productService.getProductByBarcode(code);
+    const product = await productService.getProductByBarcode(context, code);
     if (!product) {
       return {
         success: false,
@@ -199,7 +188,7 @@ export async function lookupProductByBarcodeForSaleAction(barcode: string) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
