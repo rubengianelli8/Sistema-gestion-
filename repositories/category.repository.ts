@@ -1,9 +1,9 @@
 import prisma from "@/lib/prisma";
+import { assertBusinessContext, type BusinessContext } from "@/lib/tenant-context";
 
 export interface CreateCategoryDto {
   nombre: string;
   descripcion?: string;
-  businessId?: number;
 }
 
 export interface UpdateCategoryDto {
@@ -14,51 +14,59 @@ export interface UpdateCategoryDto {
 export class CategoryRepository {
   private prisma = prisma;
 
-  async create(data: CreateCategoryDto) {
-    const { businessId, ...rest } = data;
+  async create(context: BusinessContext, data: CreateCategoryDto) {
+    assertBusinessContext(context);
     return await this.prisma.category.create({
       data: {
-        ...rest,
-        Business: {
-          connect: { id: businessId ?? 1 },
-        },
+        nombre: data.nombre,
+        descripcion: data.descripcion,
+        businessId: context.businessId,
       },
     });
   }
 
-  async findAll() {
+  async findAll(context: BusinessContext) {
+    assertBusinessContext(context);
     return await this.prisma.category.findMany({
+      where: { businessId: context.businessId },
       orderBy: { createdAt: "desc" },
     });
   }
 
-  async findById(id: number) {
-    return await this.prisma.category.findUnique({ where: { id } });
+  async findById(context: BusinessContext, id: number) {
+    assertBusinessContext(context);
+    return await this.prisma.category.findFirst({ where: { id, businessId: context.businessId } });
   }
 
-  async findByName(nombre: string) {
-    return await this.prisma.category.findUnique({ where: { nombre } });
+  async findByName(context: BusinessContext, nombre: string) {
+    assertBusinessContext(context);
+    return await this.prisma.category.findFirst({ where: { nombre, businessId: context.businessId } });
   }
 
-  async update(id: number, data: UpdateCategoryDto) {
+  async update(context: BusinessContext, id: number, data: UpdateCategoryDto) {
+    assertBusinessContext(context);
     return await this.prisma.category.update({
-      where: { id },
-      data,
+      where: { id, businessId: context.businessId },
+      data: { nombre: data.nombre, descripcion: data.descripcion },
     });
   }
 
-  async delete(id: number) {
-    return await this.prisma.category.delete({ where: { id } });
+  async delete(context: BusinessContext, id: number) {
+    assertBusinessContext(context);
+    return await this.prisma.category.delete({ where: { id, businessId: context.businessId } });
   }
 
-  async exists(id: number): Promise<boolean> {
-    const count = await this.prisma.category.count({ where: { id } });
+  async exists(context: BusinessContext, id: number): Promise<boolean> {
+    assertBusinessContext(context);
+    const count = await this.prisma.category.count({ where: { id, businessId: context.businessId } });
     return count > 0;
   }
 
-  async nameExists(nombre: string, excludeId?: number): Promise<boolean> {
+  async nameExists(context: BusinessContext, nombre: string, excludeId?: number): Promise<boolean> {
+    assertBusinessContext(context);
     const count = await this.prisma.category.count({
       where: {
+        businessId: context.businessId,
         nombre,
         ...(excludeId && { id: { not: excludeId } }),
       },

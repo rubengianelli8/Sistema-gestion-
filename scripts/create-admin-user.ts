@@ -5,6 +5,12 @@ import { hashPassword } from "../lib/auth";
 
 async function createAdminUser() {
   try {
+    const businessId = Number(process.env.INITIAL_BUSINESS_ID);
+    if (!Number.isSafeInteger(businessId) || businessId <= 0) {
+      throw new Error("INITIAL_BUSINESS_ID debe identificar explícitamente un negocio existente");
+    }
+    const business = await prisma.business.findUnique({ where: { id: businessId }, select: { id: true } });
+    if (!business) throw new Error("Negocio inicial no válido");
     // Generar un email único con dominio @yopmail.com
     const timestamp = Date.now();
     const email = `admin-ferreteria@yopmail.com`;
@@ -22,7 +28,7 @@ async function createAdminUser() {
         password: hashedPassword,
         rol: UserRole.ADMIN,
         estado: true,
-        businessId: 1, // Asumiendo que el negocio con ID 1 existe
+        businessId: business.id,
       },
     });
 
@@ -33,9 +39,9 @@ async function createAdminUser() {
     console.log(`   Rol: ${user.rol}`);
     console.log(`   Contraseña: ${password}`);
     console.log(`   ID: ${user.id}`);
-  } catch (error: any) {
-    console.error("❌ Error al crear el usuario:", error.message);
-    if (error.code === "P2002") {
+  } catch (error: unknown) {
+    console.error("❌ Error al crear el usuario:", error instanceof Error ? error.message : "Error desconocido");
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
       console.error("   El email ya existe en la base de datos.");
     }
     process.exit(1);
@@ -73,9 +79,9 @@ async function createSuperAdminUser() {
     console.log(`   Rol: ${user.rol}`);
     console.log(`   Contraseña: ${password}`);
     console.log(`   ID: ${user.id}`);
-  } catch (error: any) {
-    console.error("❌ Error al crear el usuario:", error.message);
-    if (error.code === "P2002") {
+  } catch (error: unknown) {
+    console.error("❌ Error al crear el usuario:", error instanceof Error ? error.message : "Error desconocido");
+    if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
       console.error("   El email ya existe en la base de datos.");
     }
     process.exit(1);

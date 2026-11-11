@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/app/api/auth/[...nextauth]/route";
+import { requireBranchContext, tenantActionError, productScope } from "@/lib/tenant-context";
 import { productService } from "@/services";
 import { requirePermission, Permission } from "@/lib/permissions";
 import prisma from "@/lib/prisma";
@@ -27,35 +27,25 @@ interface ProductInput {
 
 export async function createProductAction(data: ProductInput) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_CREAR);
-
-    const branchId = session.user.branchId;
-    if (!branchId) {
-      return { success: false, error: "No se encontró la sucursal del usuario" };
-    }
+    requirePermission(context.rol, Permission.PRODUCTOS_CREAR);
 
     const { supplierPrices, ...productData } = data;
 
     const product = await productService.createProduct(
+      context,
       {
         nombre: productData.nombre,
         descripcion: productData.descripcion,
         codigoBarras: productData.codigoBarras,
         imagenUrl: productData.imagenUrl,
-        categoriaId: productData.categoriaId ?? undefined,
-        unitId: productData.unitId ?? undefined,
+        categoriaId: productData.categoriaId,
+        unitId: productData.unitId,
         stock: productData.stock ?? 0,
         stockMinimo: productData.stockMinimo ?? 0,
         precio: productData.precio ?? 0,
-        branchId,
       },
-      parseInt(session.user.id),
-      session.user.name,
     );
 
     if (supplierPrices && supplierPrices.length > 0) {
@@ -91,30 +81,18 @@ export async function createProductAction(data: ProductInput) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function getProductByIdAction(id: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+    requirePermission(context.rol, Permission.PRODUCTOS_VER);
 
-    const product = await prisma.product.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        categoria: true,
-        Unit: true,
-        supplierPrices: {
-          include: { proveedor: true },
-        },
-      },
-    });
+    const product = await productService.getProductById(context, parseInt(id, 10));
 
     if (!product) {
       return { success: false, error: "Producto no encontrado" };
@@ -124,26 +102,23 @@ export async function getProductByIdAction(id: string) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function getAllProductsAction() {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+    requirePermission(context.rol, Permission.PRODUCTOS_VER);
 
-    const products = await productService.getAllProducts();
+    const products = await productService.getAllProducts(context);
     return { success: true, data: products };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
@@ -154,73 +129,60 @@ export async function getPaginatedProductsAction(params: {
   pageSize: number;
 }) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+    requirePermission(context.rol, Permission.PRODUCTOS_VER);
 
-    const data = await productService.getPaginatedProducts(params);
+    const data = await productService.getPaginatedProducts(context, params);
     return { success: true, data };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function searchProductsAction(query: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_VER);
+    requirePermission(context.rol, Permission.PRODUCTOS_VER);
 
-    const products = await productService.searchProducts(query);
+    const products = await productService.searchProducts(context, query);
     return { success: true, data: products };
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function updateProductAction(id: string, data: Partial<ProductInput>) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_EDITAR);
+    requirePermission(context.rol, Permission.PRODUCTOS_EDITAR);
 
     const productId = parseInt(id);
     const { supplierPrices, ...productData } = data;
-    const existingProduct = await prisma.product.findUnique({
-      where: { id: productId },
-      select: { imagenUrl: true },
-    });
+    const existingProduct = await productService.getProductById(context, productId);
 
     const product = await productService.updateProduct(
+      context,
       productId,
       {
         nombre: productData.nombre,
         descripcion: productData.descripcion,
         codigoBarras: productData.codigoBarras,
         imagenUrl: productData.imagenUrl,
-        categoriaId: productData.categoriaId ?? undefined,
-        unitId: productData.unitId ?? undefined,
+        categoriaId: productData.categoriaId,
+        unitId: productData.unitId,
         stock: productData.stock,
         stockMinimo: productData.stockMinimo,
         precio: productData.precio,
       },
-      parseInt(session.user.id),
-      session.user.name,
     );
 
     if (supplierPrices !== undefined) {
@@ -229,6 +191,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
       await prisma.supplierPrice.deleteMany({
         where: {
           productoId: productId,
+          producto: productScope(context),
           proveedorId: { notIn: incomingProveedorIds },
         },
       });
@@ -278,24 +241,20 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
 
 export async function deleteProductAction(id: string) {
   try {
-    const session = await auth();
-    if (!session?.user) {
-      return { success: false, error: "No autorizado" };
-    }
+    const context = await requireBranchContext();
 
-    requirePermission(session.user.rol, Permission.PRODUCTOS_ELIMINAR);
+    requirePermission(context.rol, Permission.PRODUCTOS_ELIMINAR);
 
     const result = await productService.deleteProduct(
+      context,
       parseInt(id),
-      parseInt(session.user.id),
-      session.user.name,
     );
 
     return {
@@ -306,7 +265,7 @@ export async function deleteProductAction(id: string) {
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
+      error: tenantActionError(error),
     };
   }
 }
