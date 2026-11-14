@@ -32,6 +32,7 @@ export async function createProductAction(data: ProductInput) {
     requirePermission(context.rol, Permission.PRODUCTOS_CREAR);
 
     const { supplierPrices, ...productData } = data;
+    await productService.validateSupplierPrices(context, supplierPrices);
 
     const product = await productService.createProduct(
       context,
@@ -53,7 +54,8 @@ export async function createProductAction(data: ProductInput) {
         supplierPrices.map((sp) =>
           prisma.supplierPrice.upsert({
             where: {
-              productoId_proveedorId: {
+              businessId_productoId_proveedorId: {
+                businessId: context.businessId,
                 productoId: product.id,
                 proveedorId: sp.proveedorId,
               },
@@ -63,6 +65,7 @@ export async function createProductAction(data: ProductInput) {
               codigoProveedor: sp.codigoProveedor,
             },
             create: {
+              businessId: context.businessId,
               productoId: product.id,
               proveedorId: sp.proveedorId,
               precio: sp.precio,
@@ -168,6 +171,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
     const productId = parseInt(id);
     const { supplierPrices, ...productData } = data;
     const existingProduct = await productService.getProductById(context, productId);
+    await productService.validateSupplierPrices(context, supplierPrices);
 
     const product = await productService.updateProduct(
       context,
@@ -190,6 +194,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
       const incomingProveedorIds = supplierPrices.map((sp) => sp.proveedorId);
       await prisma.supplierPrice.deleteMany({
         where: {
+          businessId: context.businessId,
           productoId: productId,
           producto: productScope(context),
           proveedorId: { notIn: incomingProveedorIds },
@@ -202,7 +207,8 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
           supplierPrices.map((sp) =>
             prisma.supplierPrice.upsert({
               where: {
-                productoId_proveedorId: {
+                businessId_productoId_proveedorId: {
+                  businessId: context.businessId,
                   productoId: productId,
                   proveedorId: sp.proveedorId,
                 },
@@ -212,6 +218,7 @@ export async function updateProductAction(id: string, data: Partial<ProductInput
                 codigoProveedor: sp.codigoProveedor,
               },
               create: {
+                businessId: context.businessId,
                 productoId: productId,
                 proveedorId: sp.proveedorId,
                 precio: sp.precio,

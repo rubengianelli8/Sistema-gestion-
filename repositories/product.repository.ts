@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { productScope, type BranchContext } from "@/lib/tenant-context";
+import { optionalText } from "@/lib/catalog-values";
 
 export interface CreateProductDto {
   nombre: string;
@@ -33,10 +34,10 @@ export class ProductRepository {
     const scope = productScope(context);
     return await this.prisma.product.create({
       data: {
-        nombre: data.nombre, descripcion: data.descripcion, codigoBarras: data.codigoBarras,
+        nombre: data.nombre, descripcion: data.descripcion, codigoBarras: optionalText(data.codigoBarras) ?? null,
         imagenUrl: data.imagenUrl, precio: data.precio, categoriaId: data.categoriaId,
         unitId: data.unitId, stock: data.stockActual ?? data.stock,
-        stockMinimo: data.stockMinimo, branchId: scope.branchId,
+        stockMinimo: data.stockMinimo, branchId: scope.branchId, businessId: scope.businessId,
       },
     });
   }
@@ -79,14 +80,17 @@ export class ProductRepository {
       include: {
         categoria: { where: { businessId: context.businessId } },
         Unit: true,
-        supplierPrices: { include: { proveedor: true } },
+        supplierPrices: { where: { businessId: context.businessId, proveedor: { businessId: context.businessId } }, include: { proveedor: true } },
       },
     });
   }
 
   async findByBarcode(context: BranchContext, codigoBarras: string) {
+    const scope = productScope(context);
+    const code = optionalText(codigoBarras);
+    if (!code) return null;
     return await this.prisma.product.findFirst({
-      where: { codigoBarras, ...productScope(context) },
+      where: { codigoBarras: code, ...scope },
     });
   }
 
@@ -135,7 +139,7 @@ export class ProductRepository {
     return await this.prisma.product.update({
       where: { id, ...productScope(context) },
       data: {
-        nombre: data.nombre, descripcion: data.descripcion, codigoBarras: data.codigoBarras,
+        nombre: data.nombre, descripcion: data.descripcion, codigoBarras: optionalText(data.codigoBarras),
         imagenUrl: data.imagenUrl, precio: data.precio, categoriaId: data.categoriaId,
         unitId: data.unitId, stock: data.stock, stockMinimo: data.stockMinimo,
       },
@@ -154,11 +158,12 @@ export class ProductRepository {
 
   async barcodeExists(context: BranchContext, codigoBarras: string, excludeId?: number): Promise<boolean> {
     const scope = productScope(context);
-    if (!codigoBarras) return false;
+    const code = optionalText(codigoBarras);
+    if (!code) return false;
     const count = await this.prisma.product.count({
       where: {
         ...scope,
-        codigoBarras,
+        codigoBarras: code,
         ...(excludeId && { id: { not: excludeId } }),
       },
     });

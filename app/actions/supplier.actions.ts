@@ -11,7 +11,7 @@ import {
 } from "@/lib/validations/supplier.schema";
 import { revalidatePath } from "next/cache";
 
-// Transitional guard only: Supplier queries remain global until its tenant-key migration.
+// Every entry point passes the revalidated business context to the tenant-scoped service.
 
 export async function createSupplierAction(data: SupplierCreateInput) {
   try {
@@ -20,10 +20,10 @@ export async function createSupplierAction(data: SupplierCreateInput) {
     requirePermission(context.rol, Permission.PROVEEDORES_CREAR);
 
     const validated = supplierCreateSchema.parse(data);
-    const supplier = await supplierService.createSupplier({
+    const supplier = await supplierService.createSupplier(context, {
       nombre: validated.nombre,
       contacto: validated.contacto,
-      email: validated.email || undefined,
+      email: validated.email,
       telefono: validated.telefono,
       direccion: validated.direccion,
       cuit: validated.cuit,
@@ -49,9 +49,9 @@ export async function updateSupplierAction(
     requirePermission(context.rol, Permission.PROVEEDORES_EDITAR);
 
     const validated = supplierUpdateSchema.parse(data);
-    const supplier = await supplierService.updateSupplier(parseInt(id, 10), {
+    const supplier = await supplierService.updateSupplier(context, parseInt(id, 10), {
       ...validated,
-      email: validated.email || undefined,
+      email: validated.email,
     });
 
     revalidatePath("/dashboard/proveedores");
@@ -70,7 +70,7 @@ export async function deleteSupplierAction(id: string) {
 
     requirePermission(context.rol, Permission.PROVEEDORES_ELIMINAR);
 
-    const result = await supplierService.deleteSupplier(parseInt(id, 10));
+    const result = await supplierService.deleteSupplier(context, parseInt(id, 10));
 
     revalidatePath("/dashboard/proveedores");
     return { success: true, data: result };
@@ -88,7 +88,7 @@ export async function getAllSuppliersAction() {
 
     requirePermission(context.rol, Permission.PROVEEDORES_VER);
 
-    const suppliers = await supplierService.getAllSuppliers();
+    const suppliers = await supplierService.getAllSuppliers(context);
     return { success: true, data: suppliers };
   } catch (error) {
     return {
@@ -104,7 +104,7 @@ export async function getSupplierByIdAction(id: string) {
 
     requirePermission(context.rol, Permission.PROVEEDORES_VER);
 
-    const supplier = await supplierService.getSupplierById(parseInt(id, 10));
+    const supplier = await supplierService.getSupplierById(context, parseInt(id, 10));
     return { success: true, data: supplier };
   } catch (error) {
     return {

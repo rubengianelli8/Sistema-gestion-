@@ -86,6 +86,7 @@ function matches(row, where) {
       if (Object.hasOwn(value, "not")) return row[key] !== value.not;
       if (Object.hasOwn(value, "contains")) return String(row[key] ?? "").includes(value.contains);
       if (Object.hasOwn(value, "gt")) return row[key] > value.gt;
+      if (Object.hasOwn(value, "in")) return value.in.includes(row[key]);
       return !!row[key] && matches(row[key], value);
     }
     return row[key] === value;
@@ -116,22 +117,29 @@ const categories = [{ id: 101, businessId: 23, nombre: "Propia" }, { id: 102, bu
 const clients = [{ id: 201, businessId: 23, dni: "a", email: "a@example.test", activo: true },
   { id: 202, businessId: 88, dni: "b", email: "b@example.test", activo: true }];
 const products = [
-  { id: 301, branchId: 47, Branch: { businessId: 23 }, categoriaId: 101, nombre: "Producto", codigoBarras: "a", stock: 4 },
-  { id: 302, branchId: 99, Branch: { businessId: 88 }, nombre: "Producto ajeno", codigoBarras: "b", stock: 4 },
-  { id: 303, branchId: 48, Branch: { businessId: 23 }, nombre: "Otra sucursal", codigoBarras: "c", stock: 4 },
+  { id: 301, businessId: 23, branchId: 47, Branch: { businessId: 23 }, categoriaId: 101, nombre: "Producto", codigoBarras: "a", stock: 4 },
+  { id: 302, businessId: 88, branchId: 99, Branch: { businessId: 88 }, nombre: "Producto ajeno", codigoBarras: "b", stock: 4 },
+  { id: 303, businessId: 23, branchId: 48, Branch: { businessId: 23 }, nombre: "Otra sucursal", codigoBarras: "c", stock: 4 },
 ];
-Object.assign(f.db, { category: table(categories, writes), client: table(clients, writes), product: table(products, writes),
-  supplierPrice: { deleteMany: async () => { writes.push("supplier price delete"); }, upsert: async () => { writes.push("supplier price upsert"); } } });
-const dependencies = { "@/lib/prisma": defaultModule(f.db), "@/lib/tenant-context": f.tenant };
+const suppliers = [{ id: 401, businessId: 23, nombre: "Propio", cuit: "20123456786", activo: true },
+  { id: 402, businessId: 88, nombre: "Ajeno", cuit: "30987654321", activo: true }];
+const priceWrites = [];
+Object.assign(f.db, { category: table(categories, writes), client: table(clients, writes), product: table(products, writes), supplier: table(suppliers, writes),
+  supplierPrice: { deleteMany: async () => { writes.push("supplier price delete"); }, upsert: async args => { priceWrites.push(args); writes.push("supplier price upsert"); return args.create; } } });
+const values = load("lib/catalog-values.ts", { "server-only": {} });
+const dependencies = { "@/lib/prisma": defaultModule(f.db), "@/lib/tenant-context": f.tenant, "@/lib/catalog-values": values };
 const categoryModule = load("repositories/category.repository.ts", dependencies);
 const customerModule = load("repositories/customer.repository.ts", dependencies);
 const productModule = load("repositories/product.repository.ts", dependencies);
+const supplierModule = load("repositories/supplier.repository.ts", dependencies);
 const category = new categoryModule.CategoryRepository();
 const customer = new customerModule.CustomerRepository();
 const product = new productModule.ProductRepository();
+const supplier = new supplierModule.SupplierRepository();
 const categoryService = new (load("services/category.service.ts", { ...dependencies, "@/repositories/category.repository": categoryModule }).CategoryService)(category);
 const customerService = new (load("services/customer.service.ts", { ...dependencies, "@/repositories/customer.repository": customerModule }).CustomerService)(customer);
 const productService = new (load("services/product.service.ts", { ...dependencies, "@/repositories/product.repository": productModule }).ProductService)(product);
+const supplierService = new (load("services/supplier.service.ts", { ...dependencies, "@/repositories/supplier.repository": supplierModule }).SupplierService)(supplier);
 
 await check("category list, detail and name checks stay in business", async () => {
   assert.deepEqual((await category.findAll(context)).map(row => row.id), [101]);
@@ -177,13 +185,13 @@ await check("creation ignores injected tenant IDs and never falls back to 1", as
   const a = await category.create(context, { nombre: "new", businessId: 88 });
   const b = await customer.create(context, { nombre: "new", dni: "new", telefono: "", direccion: "", businessId: 88 });
   const c = await product.create(context, { nombre: "new", branchId: 99 });
-  assert.equal(a.businessId, 23); assert.equal(b.businessId, 23); assert.equal(c.branchId, 47);
+  assert.equal(a.businessId, 23); assert.equal(b.businessId, 23); assert.equal(c.branchId, 47); assert.equal(c.businessId, 23);
   await assert.rejects(() => category.create(undefined, { nombre: "new" }), /No autorizado/);
   await assert.rejects(() => product.create({ ...context, branchId: undefined }, { nombre: "new" }), /No autorizado/);
 });
 
 const permissionChecks = [];
-const actionDeps = { ...dependencies, "@/services": { categoryService, customerService, productService },
+const actionDeps = { ...dependencies, "@/services": { categoryService, customerService, productService, supplierService },
   "@/lib/permissions": { requirePermission: role => permissionChecks.push(role), Permission: {} },
   "next/cache": { revalidatePath: () => {} }, "@/lib/s3": { deleteFileFromS3ByUrl: async () => {} } };
 const validation = load("lib/validations/category.schema.ts", { zod: { z } });
@@ -201,6 +209,52 @@ await check("foreign product action cannot update supplier prices or images", as
   assert.equal(result.success, false);
   assert.equal(result.error, "Producto no encontrado");
   assert.equal(writes.length, before);
+});
+await check("supplier CRUD and product-price lookup are tenant scoped", async () => {
+  assert.deepEqual((await supplier.findAll(context, true)).map(row => row.id), [401]);
+  assert.equal(await supplier.findByCuit(context, "30-98765432-1"), null);
+  assert.equal((await supplier.findByCuit(context, "20-12345678-6")).id, 401);
+  await assert.rejects(() => supplierService.getSupplierById(context, 402), /Proveedor no encontrado/);
+  await assert.rejects(() => supplierService.updateSupplier(context, 402, { nombre: "changed" }), /Proveedor no encontrado/);
+  await assert.rejects(() => supplierService.deleteSupplier(context, 402), /Proveedor no encontrado/);
+  await assert.rejects(() => supplierService.getSuppliersByProduct(context, 302), /Producto no encontrado/);
+  await assert.rejects(() => supplierService.createSupplier(context, { nombre: "Duplicado", cuit: "20-12345678-6" }), /Ya existe un proveedor/);
+});
+await check("optional barcode, supplier CUIT and email are normalized on server", async () => {
+  const created = await supplier.create(context, { nombre: "Nuevo", cuit: "   ", email: "   ", businessId: 88 });
+  assert.equal(created.businessId, 23); assert.equal(created.cuit, null); assert.equal(created.email, null);
+  const edited = await supplier.update(context, 401, { cuit: "", email: "" });
+  assert.equal(edited.cuit, null); assert.equal(edited.email, null);
+  assert.equal(values.optionalCuit("20-12345678-6"), "20123456786");
+  assert.equal((await product.create(context, { nombre: "Sin código", codigoBarras: "   " })).codigoBarras, null);
+  assert.equal((await product.update(context, 301, { codigoBarras: "" })).codigoBarras, null);
+  assert.equal((await product.update(context, 301, { nombre: "Sin cambio de código" })).codigoBarras, undefined);
+});
+await check("foreign suppliers cannot cause partial product creation or updates", async () => {
+  const before = writes.length;
+  const prices = [{ proveedorId: 402, precio: 12 }];
+  assert.equal((await productActions.createProductAction({ nombre: "Nuevo", supplierPrices: prices })).success, false);
+  assert.equal((await productActions.updateProductAction("301", { nombre: "changed", supplierPrices: prices })).success, false);
+  assert.equal(writes.length, before);
+});
+await check("product price writer takes tenant from context, ignoring injected business", async () => {
+  const result = await productActions.createProductAction({ nombre: "Nuevo", supplierPrices: [{ proveedorId: 401, precio: 12, businessId: 88 }] });
+  assert.equal(result.success, true);
+  const price = priceWrites.at(-1);
+  assert.equal(price.create.businessId, 23);
+  assert.deepEqual(price.where.businessId_productoId_proveedorId, { businessId: 23, productoId: result.data.id, proveedorId: 401 });
+});
+await check("purchase validates suppliers and writes prices using the same business", async () => {
+  f.db.$transaction = async run => run(f.db);
+  const PurchaseService = load("services/purchase.service.ts", { ...dependencies, "@/repositories/purchase.repository": {}, "@prisma/client": { PurchaseStatus: { CANCELADA: "CANCELADA" } } }).PurchaseService;
+  const service = new PurchaseService({ create: async data => ({ id: 901, ...data }) });
+  const purchase = { proveedorId: 402, items: [{ productoId: 301, cantidad: 2, precioUnitario: 12 }] };
+  const before = writes.length;
+  await assert.rejects(() => service.createPurchase(purchase, context), /Proveedor no encontrado/);
+  assert.equal(writes.length, before);
+  await service.createPurchase({ ...purchase, proveedorId: 401 }, context);
+  assert.equal(priceWrites.at(-1).create.businessId, 23);
+  assert.deepEqual(priceWrites.at(-1).where.businessId_productoId_proveedorId, { businessId: 23, productoId: 301, proveedorId: 401 });
 });
 await check("ORM and cross-business uniqueness details are not returned", async () => {
   const message = f.tenant.tenantActionError(new Error("P2002 private database record"));
