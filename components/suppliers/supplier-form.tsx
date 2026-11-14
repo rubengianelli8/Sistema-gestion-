@@ -64,10 +64,10 @@ export function SupplierForm({ supplier }: SupplierFormProps) {
       const data: SupplierCreateInput = {
         nombre: formData.nombre,
         contacto: formData.contacto || undefined,
-        email: formData.email || undefined,
+        email: formData.email,
         telefono: formData.telefono || undefined,
         direccion: formData.direccion || undefined,
-        cuit: formData.cuit || undefined,
+        cuit: formData.cuit,
       };
 
       if (supplier?.id) {

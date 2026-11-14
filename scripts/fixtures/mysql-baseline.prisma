@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Enums
+enum UserRole {
+  SUPERADMIN
+  ADMIN
+  VENDEDOR
+  ALMACENERO
+  REPOSITOR
+  CONTADOR
+}
+
+enum SaleStatus {
+  COMPLETADA
+  PENDIENTE
+  ANULADA
+}
+
+enum QuoteStatus {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+  CONVERTIDO
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+}
+
+enum PurchaseStatus {
+  PENDIENTE
+  RECIBIDA
+  PARCIAL
+  CANCELADA
+}
+
+
+
+model Business {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  telefono    String?
+  email       String?
+  cuit        String?
+  branches    Branch[]
+  taxes       Tax[]
+  categories  Category[]
+  clients     Client[]
+  users       User[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Branch {
+  id          Int       @id @default(autoincrement())
+  direccion   String?
+  telefono    String?
+  email       String?
+  cuit        String?
+  number      Int @default(1)
+  businessId  Int
+  business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  products    Product[]
+  sales       Sale[]
+  purchases   Purchase[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([number, businessId])
+}
+
+// User Model (con soporte para NextAuth)
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String
+  password      String    // password_hash
+  rol           UserRole  @default(ADMIN)
+  estado        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLogin     DateTime?
+  businessId    Int?
+
+
+  // Relaciones
+  sales         Sale[]
+  quotes        Quote[]
+  business      Business?   @relation(fields: [businessId], references: [id])
+
+
+  @@index([email])
+  @@index([rol])
+  @@index([estado])
+}
+
+
+// Category Model
+model Category {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  descripcion String?
+  createdAt   DateTime  @default(now())
+  businessId    Int
+  // Relaciones
+  Business    Business  @relation(fields: [businessId], references: [id])
+  products    Product[]
+
+
+  @@index([nombre])
+}
+
+// Product Model
+model Product {
+  id               Int       @id @default(autoincrement())
+  nombre           String
+  descripcion      String?
+  codigoBarras     String?   @unique
+  categoriaId      Int?
+  imagenUrl        String?
+  precio           Float     @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  stock            Int       @default(0)
+  stockMinimo      Int       @default(1)
+  branchId         Int
+  Branch           Branch    @relation(fields: [branchId], references: [id])
+  unitId           Int?
+  Unit             Unit?     @relation(fields: [unitId], references: [id])
+
+  // Relaciones
+  categoria        Category?         @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  saleItems        SaleItem[]
+  quoteItems       QuoteItem[]
+  purchaseItems    PurchaseItem[]
+  supplierPrices   SupplierPrice[]
+
+  @@index([nombre])
+  @@index([codigoBarras])
+  @@index([categoriaId])
+}
+
+// Customer Model
+model Client {
+  id                    Int       @id @default(autoincrement())
+  nombre                String
+  dni                   String    @unique
+  email                 String?   @unique
+  telefono              String
+  direccion             String
+  activo                Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  businessId            Int
+
+  // Relaciones
+  sales                 Sale[]
+  quotes                Quote[]
+  Business              Business  @relation(fields: [businessId], references: [id])
+
+  @@index([email])
+  @@index([dni])
+  @@index([activo])
+}
+
+// Sale Model
+model Sale {
+  id            Int           @id @default(autoincrement())
+  clienteId     Int?
+  vendedorId    Int
+  total         Float
+  estado        SaleStatus   @default(COMPLETADA)
+  metodoPago    PaymentMethod
+  notas         String?       @db.Text
+  fecha         DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  branchId        Int
+
+  // Relaciones
+  Branch        Branch    @relation(fields: [branchId], references: [id])
+  cliente       Client?     @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  vendedor      User         @relation(fields: [vendedorId], references: [id])
+  items         SaleItem[]
+
+  @@index([fecha])
+  @@index([vendedorId])
+  @@index([clienteId])
+  @@index([estado])
+}
+
+// SaleItem Model
+model SaleItem {
+  id            Int       @id @default(autoincrement())
+  saleId        Int
+  productoId    Int
+  cantidad      Int
+  precioUnitario Float
+  porcentajeDescuento Float @default(0)
+  porcentajeGanancia Float
+  ganancia_neta Float
+  taxId         Int?
+  subtotal      Float
+
+  // Relaciones
+  sale          Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  producto      Product   @relation(fields: [productoId], references: [id])
+  tax           Tax?      @relation(fields: [taxId], references: [id])
+  @@index([saleId])
+  @@index([productoId])
+}
+
+// Quote Model
+model Quote {
+  id                  Int         @id @default(autoincrement())
+  clienteId           Int
+  vendedorId          Int
+  total               Float
+  estado              QuoteStatus @default(PENDIENTE)
+  validezDias         Int         @default(15)
+  notas               String?
+  convertidoAVentaId  Int?
+  fecha               DateTime    @default(now())
+  createdAt           DateTime    @default(now())
+
+  // Relaciones
+  cliente             Client    @relation(fields: [clienteId], references: [id])
+  vendedor            User        @relation(fields: [vendedorId], references: [id])
+  items               QuoteItem[]
+
+  @@index([fecha])
+  @@index([vendedorId])
+  @@index([clienteId])
+  @@index([estado])
+}
+
+// QuoteItem Model
+model QuoteItem {
+  id            Int       @id @default(autoincrement())
+  quoteId       Int
+  productoId    Int
+  cantidad      Int
+  precioUnitario Float
+  subtotal      Float
+
+  // Relaciones
+  quote         Quote     @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  producto      Product   @relation(fields: [productoId], references: [id])
+
+  @@index([quoteId])
+  @@index([productoId])
+}
+
+// Supplier Model
+model Supplier {
+  id        Int       @id @default(autoincrement())
+  nombre    String
+  contacto  String?
+  email     String?
+  telefono  String?
+  direccion String?
+  cuit      String?
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relaciones
+  supplierPrices SupplierPrice[]
+  purchases      Purchase[]
+
+  @@index([nombre])
+  @@index([activo])
+}
+
+// SupplierPrice Model
+model SupplierPrice {
+  id              Int       @id @default(autoincrement())
+  productoId      Int
+  proveedorId     Int
+  precio          Float
+  codigoProveedor String?
+  fechaActualizacion DateTime @default(now()) @updatedAt
+
+  // Relaciones
+  producto        Product   @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  proveedor       Supplier  @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, proveedorId])
+  @@index([productoId])
+  @@index([proveedorId])
+  @@index([fechaActualizacion])
+}
+
+// Purchase Model
+model Purchase {
+  id            Int             @id @default(autoincrement())
+  proveedorId   Int
+  total         Float
+  estado        PurchaseStatus  @default(PENDIENTE)
+  numeroFactura String?
+  notas         String?
+  fechaRecepcion DateTime?
+  fecha         DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  branchId      Int
+
+  // Relaciones
+  proveedor     Supplier        @relation(fields: [proveedorId], references: [id])
+  Branch        Branch          @relation(fields: [branchId], references: [id])
+  items         PurchaseItem[]
+
+  @@index([proveedorId])
+  @@index([fecha])
+  @@index([estado])
+}
+
+// PurchaseItem Model
+model PurchaseItem {
+  id            Int       @id @default(autoincrement())
+  purchaseId    Int
+  productoId    Int
+  productoNombre String
+  cantidad      Int
+  precioUnitario Float
+  subtotal      Float
+
+  // Relaciones
+  purchase      Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  producto      Product   @relation(fields: [productoId], references: [id])
+
+  @@index([purchaseId])
+  @@index([productoId])
+}
+
+model Tax {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  porcentaje  Float?
+  fix_amount  Float?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  businessId  Int
+  Business    Business  @relation(fields: [businessId], references: [id])
+  saleItems   SaleItem[]
+}
+
+model Unit {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  abreviatura String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}

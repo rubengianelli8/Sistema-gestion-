@@ -31,7 +31,7 @@ export function assertBusinessContext(context: BusinessContext): void {
 export function productScope(context: BranchContext) {
   assertBusinessContext(context);
   if (!isId(context.branchId)) throw new TenantError("No autorizado");
-  return { branchId: context.branchId, Branch: { businessId: context.businessId } };
+  return { businessId: context.businessId, branchId: context.branchId, Branch: { businessId: context.businessId } };
 }
 
 async function loadBusinessContext(session: Session | null): Promise<BusinessContext> {
@@ -70,6 +70,6 @@ export async function requireBranchContext(): Promise<BranchContext> {
 
 export function tenantActionError(error: unknown): string {
   if (error instanceof TenantError) return error.message;
-  // Do not expose Prisma errors: global unique constraints still exist until the next migration.
+  // Do not expose database details or information about records outside the current context.
   return "No se pudo completar la operación. Revisá los datos ingresados.";
 }

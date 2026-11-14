@@ -5,6 +5,20 @@ import { productScope, TenantError, type BranchContext } from "@/lib/tenant-cont
 export class ProductService {
   constructor(private readonly repository: ProductRepository) {}
 
+  async validateSupplierPrices(context: BranchContext, prices?: { proveedorId: number; precio: number }[]) {
+    productScope(context);
+    if (prices === undefined) return;
+    if (!Array.isArray(prices) || prices.some(price => !price || !Number.isSafeInteger(price.proveedorId) || price.proveedorId <= 0 || !Number.isFinite(price.precio) || price.precio < 0)) {
+      throw new TenantError("Los precios de proveedor no son válidos");
+    }
+    const ids = [...new Set(prices.map(price => price.proveedorId))];
+    if (!ids.length) return;
+    const suppliers = await prisma.supplier.findMany({
+      where: { id: { in: ids }, businessId: context.businessId }, select: { id: true },
+    });
+    if (suppliers.length !== ids.length) throw new TenantError("Proveedor no encontrado");
+  }
+
   private async validateCategory(context: BranchContext, categoriaId?: number | null) {
     productScope(context);
     if (categoriaId == null) return;
