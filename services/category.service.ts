@@ -54,8 +54,8 @@ export class CategoryService {
     }
 
     const productsCount = await prisma.product.count({
-      // Also block legacy cross-business references, avoiding ON DELETE SET NULL on an unrelated product.
-      where: { categoriaId: id, categoria: { businessId: context.businessId } },
+      // The composite FK now guarantees that every referencing product belongs to this business.
+      where: { categoriaId: id, businessId: context.businessId },
     });
 
     if (productsCount > 0) {

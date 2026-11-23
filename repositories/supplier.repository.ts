@@ -1,4 +1,6 @@
 import prisma from "@/lib/prisma";
+import { assertBusinessContext, TenantError, type BusinessContext } from "@/lib/tenant-context";
+import { optionalCuit, optionalText } from "@/lib/catalog-values";
 
 export interface CreateSupplierDto {
   nombre: string;
@@ -22,58 +24,78 @@ export interface UpdateSupplierDto {
 export class SupplierRepository {
   private prisma = prisma;
 
-  async create(data: CreateSupplierDto) {
+  async create(context: BusinessContext, data: CreateSupplierDto) {
+    assertBusinessContext(context);
     return await this.prisma.supplier.create({
       data: {
         nombre: data.nombre,
         contacto: data.contacto,
-        email: data.email || undefined,
+        email: optionalText(data.email) ?? null,
         telefono: data.telefono,
         direccion: data.direccion,
-        cuit: data.cuit,
+        cuit: optionalCuit(data.cuit) ?? null,
+        businessId: context.businessId,
       },
     });
   }
 
-  async update(id: number, data: UpdateSupplierDto) {
+  async update(context: BusinessContext, id: number, data: UpdateSupplierDto) {
+    assertBusinessContext(context);
     return await this.prisma.supplier.update({
-      where: { id },
-      data,
+      where: { id, businessId: context.businessId },
+      data: {
+        nombre: data.nombre, contacto: data.contacto, email: optionalText(data.email),
+        telefono: data.telefono, direccion: data.direccion, cuit: optionalCuit(data.cuit), activo: data.activo,
+      },
     });
   }
 
-  async delete(id: number) {
+  async delete(context: BusinessContext, id: number) {
+    assertBusinessContext(context);
     return await this.prisma.supplier.update({
-      where: { id },
+      where: { id, businessId: context.businessId },
       data: { activo: false },
     });
   }
 
-  async findAll(includeInactive = false) {
+  async findAll(context: BusinessContext, includeInactive = false) {
+    assertBusinessContext(context);
     return await this.prisma.supplier.findMany({
-      where: includeInactive ? undefined : { activo: true },
+      where: { businessId: context.businessId, ...(includeInactive ? {} : { activo: true }) },
       orderBy: { nombre: "asc" },
     });
   }
 
-  async findById(id: number) {
-    return await this.prisma.supplier.findUnique({ where: { id } });
+  async findById(context: BusinessContext, id: number) {
+    assertBusinessContext(context);
+    return await this.prisma.supplier.findFirst({ where: { id, businessId: context.businessId } });
   }
 
-  async findAllWithPrices(productoId: number) {
+  async findByCuit(context: BusinessContext, cuit: string) {
+    assertBusinessContext(context);
+    const value = optionalCuit(cuit);
+    if (!value) return null;
+    return await this.prisma.supplier.findFirst({ where: { businessId: context.businessId, cuit: value } });
+  }
+
+  async findAllWithPrices(context: BusinessContext, productoId: number) {
+    assertBusinessContext(context);
+    const product = await this.prisma.product.findFirst({ where: { id: productoId, businessId: context.businessId }, select: { id: true } });
+    if (!product) throw new TenantError("Producto no encontrado");
     return await this.prisma.supplier.findMany({
-      where: { activo: true },
+      where: { businessId: context.businessId, activo: true },
       include: {
         supplierPrices: {
-          where: { productoId },
+          where: { productoId, businessId: context.businessId },
         },
       },
       orderBy: { nombre: "asc" },
     });
   }
 
-  async exists(id: number): Promise<boolean> {
-    const count = await this.prisma.supplier.count({ where: { id } });
+  async exists(context: BusinessContext, id: number): Promise<boolean> {
+    assertBusinessContext(context);
+    const count = await this.prisma.supplier.count({ where: { id, businessId: context.businessId } });
     return count > 0;
   }
 }

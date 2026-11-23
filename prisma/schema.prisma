@@ -55,6 +55,9 @@ model Business {
   categories  Category[]
   clients     Client[]
   users       User[]
+  products    Product[]       @relation("BusinessProducts")
+  suppliers   Supplier[]      @relation("BusinessSuppliers")
+  supplierPrices SupplierPrice[] @relation("BusinessSupplierPrices")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -68,13 +71,14 @@ model Branch {
   number      Int @default(1)
   businessId  Int
   business    Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  products    Product[]
+  products    Product[] @relation("BranchProducts")
   sales       Sale[]
   purchases   Purchase[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@unique([number, businessId])
+  @@unique([id, businessId])
 }
 
 // User Model (con soporte para NextAuth)
@@ -107,16 +111,18 @@ model User {
 // Category Model
 model Category {
   id          Int       @id @default(autoincrement())
-  nombre      String    @unique
+  nombre      String
   descripcion String?
   createdAt   DateTime  @default(now())
   businessId    Int
   // Relaciones
   Business    Business  @relation(fields: [businessId], references: [id])
-  products    Product[]
+  products    Product[] @relation("CategoryProducts")
   
 
   @@index([nombre])
+  @@unique([businessId, nombre])
+  @@unique([id, businessId])
 }
 
 // Product Model
@@ -124,7 +130,7 @@ model Product {
   id               Int       @id @default(autoincrement())
   nombre           String
   descripcion      String?
-  codigoBarras     String?   @unique
+  codigoBarras     String?
   categoriaId      Int?
   imagenUrl        String?
   precio           Float     @default(0)
@@ -133,28 +139,32 @@ model Product {
   stock            Int       @default(0)
   stockMinimo      Int       @default(1)
   branchId         Int
-  Branch           Branch    @relation(fields: [branchId], references: [id])
+  businessId       Int
+  business         Business  @relation("BusinessProducts", fields: [businessId], references: [id])
+  Branch           Branch    @relation("BranchProducts", fields: [branchId, businessId], references: [id, businessId])
   unitId           Int?
   Unit             Unit?     @relation(fields: [unitId], references: [id])
 
   // Relaciones
-  categoria        Category?         @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  categoria        Category?         @relation("CategoryProducts", fields: [categoriaId, businessId], references: [id, businessId], onDelete: Restrict)
   saleItems        SaleItem[]
   quoteItems       QuoteItem[]
   purchaseItems    PurchaseItem[]
-  supplierPrices   SupplierPrice[]
+  supplierPrices   SupplierPrice[] @relation("ProductSupplierPrices")
 
   @@index([nombre])
   @@index([codigoBarras])
   @@index([categoriaId])
+  @@unique([businessId, branchId, codigoBarras])
+  @@unique([id, businessId])
 }
 
 // Customer Model
 model Client {
   id                    Int       @id @default(autoincrement())
   nombre                String
-  dni                   String    @unique
-  email                 String?   @unique
+  dni                   String
+  email                 String?
   telefono              String
   direccion             String
   activo                Boolean   @default(true)
@@ -170,6 +180,8 @@ model Client {
   @@index([email])
   @@index([dni])
   @@index([activo])
+  @@unique([businessId, dni])
+  @@unique([businessId, email])
 }
 
 // Sale Model
@@ -262,6 +274,8 @@ model QuoteItem {
 // Supplier Model
 model Supplier {
   id        Int       @id @default(autoincrement())
+  businessId Int
+  business  Business  @relation("BusinessSuppliers", fields: [businessId], references: [id])
   nombre    String
   contacto  String?
   email     String?
@@ -273,16 +287,20 @@ model Supplier {
   updatedAt DateTime  @updatedAt
 
   // Relaciones
-  supplierPrices SupplierPrice[]
+  supplierPrices SupplierPrice[] @relation("SupplierSupplierPrices")
   purchases      Purchase[]
 
   @@index([nombre])
   @@index([activo])
+  @@unique([businessId, cuit])
+  @@unique([id, businessId])
 }
 
 // SupplierPrice Model
 model SupplierPrice {
   id              Int       @id @default(autoincrement())
+  businessId      Int
+  business        Business @relation("BusinessSupplierPrices", fields: [businessId], references: [id])
   productoId      Int
   proveedorId     Int
   precio          Float
@@ -290,10 +308,10 @@ model SupplierPrice {
   fechaActualizacion DateTime @default(now()) @updatedAt
 
   // Relaciones
-  producto        Product   @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  proveedor       Supplier  @relation(fields: [proveedorId], references: [id], onDelete: Cascade)
+  producto        Product   @relation("ProductSupplierPrices", fields: [productoId, businessId], references: [id, businessId], onDelete: Cascade)
+  proveedor       Supplier  @relation("SupplierSupplierPrices", fields: [proveedorId, businessId], references: [id, businessId], onDelete: Cascade)
 
-  @@unique([productoId, proveedorId])
+  @@unique([businessId, productoId, proveedorId])
   @@index([productoId])
   @@index([proveedorId])
   @@index([fechaActualizacion])

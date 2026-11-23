@@ -153,7 +153,7 @@ export function ProductForm({
     const payload = {
       nombre: data.nombre,
       descripcion: data.descripcion || undefined,
-      codigoBarras: data.codigoBarras || undefined,
+      codigoBarras: data.codigoBarras,
       imagenUrl: data.imagenUrl || undefined,
       categoriaId: data.categoriaId ? Number(data.categoriaId) : null,
       unitId: data.unitId ? Number(data.unitId) : null,
@@ -359,8 +359,8 @@ export function ProductForm({
                     </p>
                   ) : fields.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No se agregaron proveedores. Usá el botón "Agregar
-                      proveedor".
+                      No se agregaron proveedores. Usá el botón &quot;Agregar
+                      proveedor&quot;.
                     </p>
                   ) : (
                     <div className="space-y-4">

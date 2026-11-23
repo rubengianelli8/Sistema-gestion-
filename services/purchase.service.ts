@@ -13,11 +13,11 @@ export class PurchaseService {
   ) {
     const scope = productScope(context);
     const branchId = context.branchId;
-    const supplier = await prisma.supplier.findUnique({
-      where: { id: data.proveedorId },
+    const supplier = await prisma.supplier.findFirst({
+      where: { id: data.proveedorId, businessId: context.businessId },
     });
     if (!supplier) {
-      throw new Error("Proveedor no encontrado");
+      throw new TenantError("Proveedor no encontrado");
     }
 
     const products = await prisma.product.findMany({
@@ -56,18 +56,20 @@ export class PurchaseService {
 
       for (const item of itemsWithSubtotal) {
         await tx.product.update({
-          where: { id: item.productoId },
+          where: { id: item.productoId, ...scope },
           data: { stock: { increment: item.cantidad } },
         });
         await tx.supplierPrice.upsert({
           where: {
-            productoId_proveedorId: {
+            businessId_productoId_proveedorId: {
+              businessId: context.businessId,
               productoId: item.productoId,
               proveedorId: data.proveedorId,
             },
           },
           update: { precio: item.precioUnitario },
           create: {
+            businessId: context.businessId,
             productoId: item.productoId,
             proveedorId: data.proveedorId,
             precio: item.precioUnitario,
